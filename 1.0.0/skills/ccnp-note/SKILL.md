@@ -86,11 +86,26 @@ into one, and don't cap it at a single procedure.>
 - <another>
 ```
 
-### Step 3 — Commit and push
+### Step 3 — Update the README roadmap
+
+Read `~/.claude/plugins/cache/local/ccnp-encor/README.md` and update the
+"Roadmap — ENCOR exam domains" section so it stays in sync with the skill
+catalog:
+- Find the ENCOR domain the new topic belongs to (Architecture,
+  Virtualization, Infrastructure, Network Assurance, Security, Automation).
+- Add a new checked item `- [x] [<Topic Name>](1.0.0/skills/$ARGUMENTS/SKILL.md) — <short description>`
+  under that domain's heading, replacing a `- [ ] Not yet started` placeholder
+  if that's the first entry for that domain.
+- Do not remove or reorder existing entries — only add the new one.
+
+This step is required for every skill, not optional — a skill file without a
+matching roadmap entry is an incomplete run.
+
+### Step 4 — Commit and push
 
 This skill catalog is a git repo (see `~/.claude/plugins/cache/local/ccnp-encor/CLAUDE.md`).
-Every new or updated skill must be pushed immediately — do not leave it
-uncommitted. Run:
+Every new or updated skill (and the README update from Step 3) must be pushed
+immediately — do not leave it uncommitted. Run:
 
 ```bash
 cd ~/.claude/plugins/cache/local/ccnp-encor
@@ -101,11 +116,12 @@ git push
 
 This is pre-authorized for this repo — no need to ask before pushing.
 
-### Step 4 — Confirm
+### Step 5 — Confirm
 
 After writing and pushing, tell the user:
 - The full path where the skill was saved
 - That it was committed and pushed to the `ccnp-encor-skills` repo
+- That the README roadmap was updated to reflect the new topic
 - That it will be available after starting a new Claude Code session
 - Suggest the next topic to capture based on what they just covered
 
@@ -113,7 +129,8 @@ After writing and pushing, tell the user:
 - Use real IOS-XE syntax in config blocks — no pseudocode
 - Troubleshooting checklist should be ordered: Layer 1 → Layer 2 → Layer 3 → config errors → software bugs
 - Keep descriptions keyword-rich so the skill auto-triggers correctly
-- Always commit and push after writing a skill file — see Step 3
+- Always commit and push after writing a skill file — see Step 4
+- Always update the README roadmap before committing — see Step 3
 - If the source notes contain an explicit step-by-step procedure (a
   handshake, an election process, an ordered convergence sequence), keep it
   as a numbered list in the Procedure section instead of flattening it into
