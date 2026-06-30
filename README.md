@@ -12,7 +12,17 @@ or lab work.
 
 I'm a network engineer (NOC tech → network engineer) moving deeper into network
 security and automation (NetDevOps). This repo is part of that work in public —
-more written up on [LinkedIn](#) as I go.
+more written up on [LinkedIn](https://www.linkedin.com/in/stefan-c-reed/) as I go.
+
+## What's next — a troubleshooting agent
+
+This catalog is phase 1: one self-contained skill per topic. Phase 2 is combining
+these into a single agent that can diagnose real network problems across multiple
+topic areas at once — the way an experienced engineer actually troubleshoots, not
+one isolated skill at a time. That work is happening in a private repo since it'll
+likely involve real device interaction patterns.
+
+If that's interesting to you, [message me on LinkedIn](https://www.linkedin.com/in/stefan-c-reed/) — happy to talk through it.
 
 ## How it works
 
