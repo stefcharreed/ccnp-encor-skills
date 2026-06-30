@@ -1,0 +1,11 @@
+{
+  "name": "ccnp-encor",
+  "version": "1.0.0",
+  "description": "Private CCNP ENCOR study skill catalog — config patterns, troubleshooting checklists, and verification commands per topic.",
+  "keywords": ["pi-package", "skills", "ccnp", "networking"],
+  "pi": {
+    "skills": [
+      "./skills"
+    ]
+  }
+}
