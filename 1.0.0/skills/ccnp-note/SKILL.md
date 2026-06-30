@@ -65,6 +65,19 @@ into one, and don't cap it at a single procedure.>
 1. <step 1>
 2. ...
 
+## Reference Tables
+<Only include this section if the source notes contain tabular reference
+data — e.g. a cost/value table, a port state/role matrix, a timer defaults
+table, a comparison table. Reproduce it as a real markdown table, not a
+bullet list, since the row/column structure is the point. Omit the section
+entirely if the source has no tabular data. If there's more than one table,
+give each its own short heading.>
+<Table name 1>
+
+| <column 1> | <column 2> | ... |
+|---|---|---|
+| <value> | <value> | ... |
+
 ## Config Patterns
 ```ios-xe
 <canonical minimal config block — real IOS-XE syntax>
@@ -135,3 +148,8 @@ After writing and pushing, tell the user:
   handshake, an election process, an ordered convergence sequence), keep it
   as a numbered list in the Procedure section instead of flattening it into
   a Key Concepts bullet — the ordering is often the part worth remembering
+- If the source notes contain a reference table (cost tables, timer
+  defaults, port state/role matrices, comparison tables), reproduce it as a
+  real markdown table in the Reference Tables section instead of flattening
+  it into prose bullets — the row/column structure carries information that
+  prose loses
