@@ -47,6 +47,15 @@ description: >
 - <concept 2>
 - ...
 
+## Procedure
+<Only include this section if the source notes describe an explicit
+sequential process — a handshake, a convergence sequence, an election
+algorithm, an ordered set of phases/steps. Omit the section entirely if
+the topic is purely conceptual with no real sequence to preserve.>
+1. <step 1>
+2. <step 2>
+3. ...
+
 ## Config Patterns
 ```ios-xe
 <canonical minimal config block — real IOS-XE syntax>
@@ -96,3 +105,7 @@ After writing and pushing, tell the user:
 - Troubleshooting checklist should be ordered: Layer 1 → Layer 2 → Layer 3 → config errors → software bugs
 - Keep descriptions keyword-rich so the skill auto-triggers correctly
 - Always commit and push after writing a skill file — see Step 3
+- If the source notes contain an explicit step-by-step procedure (a
+  handshake, an election process, an ordered convergence sequence), keep it
+  as a numbered list in the Procedure section instead of flattening it into
+  a Key Concepts bullet — the ordering is often the part worth remembering
