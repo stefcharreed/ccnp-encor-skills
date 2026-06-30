@@ -48,13 +48,22 @@ description: >
 - ...
 
 ## Procedure
-<Only include this section if the source notes describe an explicit
-sequential process — a handshake, a convergence sequence, an election
-algorithm, an ordered set of phases/steps. Omit the section entirely if
-the topic is purely conceptual with no real sequence to preserve.>
+<Only include this section if the source notes describe one or more explicit
+sequential processes — a handshake, a convergence sequence, an election
+algorithm, an ordered set of phases/steps. Omit the section entirely if the
+topic is purely conceptual with no real sequence to preserve. If the source
+material has more than one distinct procedure (e.g. election logic AND a
+separate convergence/teardown flow), give each its own short label and
+numbered list under this same heading — don't collapse multiple sequences
+into one, and don't cap it at a single procedure.>
+<Procedure name 1>:
 1. <step 1>
 2. <step 2>
 3. ...
+
+<Procedure name 2, if the source has another distinct sequence>:
+1. <step 1>
+2. ...
 
 ## Config Patterns
 ```ios-xe
