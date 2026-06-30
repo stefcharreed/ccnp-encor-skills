@@ -21,6 +21,24 @@ Layer 3 forwarding decides whether a packet is delivered directly on the local s
 - An interface can carry multiple IPv4 networks via `secondary` addresses; IPv6 supports multiple addresses on one interface natively, just by repeating the `ipv6 address` command.
 - Three ways to put an SVI/routed interface where VLANs need routing: a router-on-a-stick subinterface (`encapsulation dot1Q <vlan>`) on a trunk, a switch SVI (`interface vlan <id>`, requires an up port in that VLAN), or a routed switch port (`no switchport`) for point-to-point links — the last avoids burning a "transit VLAN" that could leak elsewhere in the L2 domain or get hit by spanning tree.
 
+## Procedure
+ARP resolution for same-subnet (local) delivery:
+1. The sending host needs the destination's MAC address but only knows the destination IP — it checks the local ARP table first.
+2. If no entry exists, the host broadcasts an ARP request to the entire Layer 2 segment asking who owns that IP.
+3. Every host on the segment receives the broadcast, but only the host owning that IP address replies.
+4. The owning host sends a unicast ARP reply containing its IP and MAC address.
+5. The requesting host updates its local ARP table with the new IP→MAC mapping.
+6. The requesting host adds the resolved MAC as the destination MAC in the Layer 2 header and forwards the original packet.
+
+Per-hop rewrite for routed (remote-subnet) delivery:
+1. The source device determines the destination is on a different network and looks up the next-hop IP in its routing table (static route, default gateway, or routing protocol).
+2. The source resolves the next-hop IP to a MAC via its ARP table, then adds Layer 2 headers using its own MAC as source and the next-hop's MAC as destination.
+3. The next router receives the frame based on the destination MAC, strips the Layer 2 header, and inspects the destination IP.
+4. The router looks up the destination network in its own routing table and identifies the outbound interface.
+5. The router resolves the MAC for the destination device (or the next next-hop router) via ARP.
+6. The router rewrites the source MAC to its own outbound interface's MAC and the destination MAC to the resolved MAC, then forwards.
+7. This repeats at every hop until the frame arrives at the segment where the destination host lives.
+
 ## Config Patterns
 ```ios-xe
 ! Routed physical interface with primary + secondary IPv4, and IPv6
