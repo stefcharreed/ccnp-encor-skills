@@ -19,7 +19,7 @@ STP builds a loop-free Layer 2 topology by electing a root bridge and selectivel
 - Root path cost accumulates the *receiving* interface's STP cost at each hop; it's always 0 on the root bridge itself and the BPDU never includes the cost of the port it was sent out of.
 - Root port selection tiebreak order: lowest root path cost → lowest neighbor system priority → lowest neighbor system MAC → lowest neighbor port priority → lowest neighbor port number.
 - Designated port blocking tiebreak between two non-root switches sharing a segment: lower path cost to root wins → lower local system priority wins → lower local system MAC wins.
-- Short-mode STP cost (default on most platforms) vs long-mode (`spanning-tree pathcost method long`) — must be set identically on every switch in the L2 domain or the topology becomes inconsistent.
+- Short-mode STP cost (default on most platforms) vs long-mode (`spanning-tree pathcost method long`) — must be set identically on every switch in the L2 domain or the topology becomes inconsistent. See Reference Tables for the default cost-per-speed values.
 - TCN (topology change notification) flows from the detecting switch out its RP toward the root; the root then floods a configuration BPDU with the Topology Change flag, which makes every switch shrink its MAC aging timer to the forward delay (default 15s) to flush stale entries — this temporarily increases unknown unicast flooding.
 - Convergence time depends on failure type: direct link failure with an already-blocking alternate is fast (no recalculation needed); direct failure requiring a new RP costs ~30s (listening+learning); indirect failures (link up but BPDUs not getting through) cost the full Max Age timer (20s) plus listening+learning (~50s total).
 - *TYPE_Inc* in `show spanning-tree` Type field signals a port type mismatch with the connected switch — usually trunk/access mode mismatch.
@@ -39,6 +39,20 @@ Topology change notification (TCN) propagation after a link/switch state change:
 4. The root floods this configuration BPDU to all switches in the topology.
 5. Every switch that receives the flagged BPDU shortens its MAC address aging timer to the forward delay (default 15s), flushing stale entries while preserving actively communicating hosts.
 6. After the second configuration BPDU is received, each switch resets its MAC aging timer back to normal (default 300s).
+
+## Reference Tables
+Default interface STP port costs by link speed:
+
+| Link Speed | Short-Mode STP Cost | Long-Mode STP Cost |
+|---|---|---|
+| 10 Mbps | 100 | 2,000,000 |
+| 100 Mbps | 19 | 200,000 |
+| 1 Gbps | 4 | 20,000 |
+| 10 Gbps | 2 | 2,000 |
+| 20 Gbps | 1 | 1,000 |
+| 100 Gbps | 1 | 200 |
+| 1 Tbps | 1 | 20 |
+| 10 Tbps | 1 | 2 |
 
 ## Config Patterns
 ```ios-xe
