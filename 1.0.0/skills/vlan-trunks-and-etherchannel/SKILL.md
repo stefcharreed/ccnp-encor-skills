@@ -20,7 +20,16 @@ VTP centrally propagates VLAN definitions across a domain instead of configuring
 - EtherChannel (port channel, IEEE 802.3AD) bundles physical "member interfaces" into one logical link; STP and routing protocols see only the logical interface, so a member link flapping doesn't trigger a topology recalculation as long as at least one member stays up. Works for Layer 2 (access/trunk) or Layer 3 (routed) forwarding.
 - Static EtherChannel (`mode on`) has no health-check mechanism — if a member's physical medium degrades while line protocol stays up (e.g., a failure on one leg through intermediary optical/DWDM equipment), the switch keeps forwarding traffic onto a broken path. Dynamic protocols (LACP/PAgP) detect this because the adjacency itself fails, not just line protocol.
 - PAgP (Cisco proprietary) modes: **Auto** (responds only, no adjacency if both ends are auto), **Desirable** (initiates, forms adjacency with auto or desirable). LACP (open standard) modes: **Passive** (responds only, no adjacency if both ends passive), **Active** (initiates, forms adjacency with active or passive).
-- All member interfaces in one EtherChannel must match: port type (L2 vs L3), port mode (access vs trunk — never mixed), native VLAN, allowed VLANs, speed, duplex, MTU (L3), load interval, and storm control settings. Mismatches block bundling or cause inconsistent behavior.
+- Member interface settings that must match across every interface in an EtherChannel:
+  - **Port type** — every port must be consistently Layer 2 (switchport) or Layer 3 (routed, `no switchport`).
+  - **Port mode** — Layer 2 port channels must be all-access or all-trunk; the two cannot be mixed within one channel.
+  - **Native VLAN** — Layer 2 trunk members must share the same `switchport trunk native vlan <vlan-id>`.
+  - **Allowed VLAN** — Layer 2 trunk members must share the same `switchport trunk allowed vlan-ids`.
+  - **Speed** — all members must run the same speed.
+  - **Duplex** — all members must run the same duplex.
+  - **MTU** — all Layer 3 members must share the same MTU; a mismatched MTU blocks the interface from being added to the channel at all.
+  - **Load interval** — must be configured identically across members.
+  - **Storm control** — settings must be configured identically across members.
 - LACP fast (`lacp rate fast`, 1s advertisement) reduces failure detection from ~90s (default 30s interval × 3 missed) to ~3s — but both ends must use the same rate (fast or slow) or the EtherChannel won't come up.
 - `port-channel min-links` sets a floor on active member interfaces before the port channel comes up at all; `lacp max-bundle` caps how many members are actively forwarding (extras become hot-standby) — useful for keeping active member counts at powers of two for clean load-balancing hashes.
 - LACP system priority picks which switch is "primary" and therefore controls which members are active vs hot-standby when there are more members than the max-bundle allows; lower priority value wins. LACP port priority does the same job at the interface level on the primary switch; lower value preferred, tiebreak by lower interface number.
@@ -147,7 +156,8 @@ port-channel load-balance src-dst-mixed-ip-port
 5. Config error: mismatched member interface settings (port mode, native VLAN, allowed VLANs, MTU, storm control) — these must be identical across every member or the bundle won't form correctly or will behave inconsistently.
 6. Config error: LACP rate mismatch (`lacp rate fast` on one end, default slow on the other) — prevents the EtherChannel from coming up at all.
 7. Config error: forgetting to reset VTP revision to 0 before connecting a switch with prior VTP history — risk of accidental domain-wide VLAN deletion if its stale revision is higher than the real domain's.
-8. Software/platform bug (rare) — only after trunk negotiation, VTP state, and member interface consistency are all confirmed correct.
+8. Bundle formation basics: confirm the member link is strictly point-to-point between only two devices (no intervening hub/switch), that every member port is administratively and operationally active, and that both ends use a compatible mode — either both statically `on`, or one side LACP active with the other active/passive, or one side PAgP desirable with the other auto/desirable.
+9. Software/platform bug (rare) — only after trunk negotiation, VTP state, and member interface consistency are all confirmed correct.
 
 ## Common Pitfalls
 - Connecting a switch with leftover VTP configuration (and a non-zero revision number) to a production VTP domain without resetting its revision first — if that stale revision is higher than the domain's current one, it gets treated as authoritative and can delete VLANs domain-wide.
