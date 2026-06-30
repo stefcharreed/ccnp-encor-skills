@@ -42,7 +42,7 @@ Tracking progress against the six domains in Cisco's ENCOR (350-401) blueprint.
 - [x] [Rapid Spanning Tree (802.1W)](1.0.0/skills/rapid-spanning-tree-protocol/SKILL.md) — discarding state, proposal/agreement
 - [x] [Advanced STP tuning](1.0.0/skills/advanced-stp-tuning/SKILL.md) — root guard, BPDU guard/filter, loop guard, UDLD
 - [x] [Multiple Spanning Tree (802.1S)](1.0.0/skills/mst-protocol/SKILL.md) — MSTIs, IST, MST regions, PVST simulation
-- [ ] VLAN Trunks & EtherChannel bundles
+- [x] [VLAN Trunks & EtherChannel bundles](1.0.0/skills/vlan-trunks-and-etherchannel/SKILL.md) — VTP, DTP, LACP/PAgP, load-balancing hashes
 - [ ] Layer 3 routing protocols (OSPF, EIGRP, BGP fundamentals)
 - [ ] Wireless architecture (autonomous, centralized, cloud-based, embedded)
 
