@@ -19,8 +19,15 @@ more written up on [LinkedIn](https://www.linkedin.com/in/stefan-c-reed/) as I g
 This catalog is phase 1: one self-contained skill per topic. Phase 2 is combining
 these into a single agent that can diagnose real network problems across multiple
 topic areas at once — the way an experienced engineer actually troubleshoots, not
-one isolated skill at a time. That work is happening in a private repo since it'll
-likely involve real device interaction patterns.
+one isolated skill at a time.
+
+That phase 2 work converges with another project of mine,
+[netmiko-config-audit](https://github.com/stefcharreed/netmiko-config-audit) — a
+config drift tool that already exposes an MCP server. Rather than building a
+separate AI layer for each project, phase 2 composes this skill catalog's
+knowledge with that tool's MCP server to reason over real config drift, not just
+static topics. It's happening in a private repo since it'll likely involve real
+device interaction patterns.
 
 If that's interesting to you, [message me on LinkedIn](https://www.linkedin.com/in/stefan-c-reed/) — happy to talk through it.
 
