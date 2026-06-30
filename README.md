@@ -54,7 +54,8 @@ Tracking progress against the six domains in Cisco's ENCOR (350-401) blueprint.
 - [x] [Multiple Spanning Tree (802.1S)](1.0.0/skills/mst-protocol/SKILL.md) — MSTIs, IST, MST regions, PVST simulation
 - [x] [VLAN Trunks & EtherChannel bundles](1.0.0/skills/vlan-trunks-and-etherchannel/SKILL.md) — VTP, DTP, LACP/PAgP, load-balancing hashes
 - [x] [IP Routing Essentials](1.0.0/skills/ip-routing-essentials/SKILL.md) — RIB/FIB, AD, static routes, PBR, VRF
-- [ ] Layer 3 routing protocols (OSPF, EIGRP, BGP fundamentals)
+- [x] [EIGRP](1.0.0/skills/eigrp/SKILL.md) — DUAL, successor/feasible successor, wide metrics, query/reply convergence
+- [ ] Layer 3 routing protocols (OSPF, BGP fundamentals)
 - [ ] Wireless architecture (autonomous, centralized, cloud-based, embedded)
 
 ### 4. Network Assurance (10%)
