@@ -78,6 +78,9 @@ Tracking progress against the six domains in Cisco's ENCOR (350-401) blueprint.
 
 ## License
 
+[CC BY-NC-SA 4.0](LICENSE) — share and adapt with attribution, non-commercial
+use only, same license for derivatives.
+
 Study notes derived from CCNP ENCOR coursework, restructured in my own words for
 reuse as an AI agent skill catalog. Shared for transparency into how I study and
 build tooling — not a substitute for the original course material.
