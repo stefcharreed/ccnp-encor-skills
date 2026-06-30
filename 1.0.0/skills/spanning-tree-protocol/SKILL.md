@@ -24,6 +24,22 @@ STP builds a loop-free Layer 2 topology by electing a root bridge and selectivel
 - Convergence time depends on failure type: direct link failure with an already-blocking alternate is fast (no recalculation needed); direct failure requiring a new RP costs ~30s (listening+learning); indirect failures (link up but BPDUs not getting through) cost the full Max Age timer (20s) plus listening+learning (~50s total).
 - *TYPE_Inc* in `show spanning-tree` Type field signals a port type mismatch with the connected switch — usually trunk/access mode mismatch.
 
+## Procedure
+Root bridge election:
+1. Each switch initializes assuming it is the root bridge, using its own bridge ID as the root bridge identifier.
+2. The switch listens to neighbor configuration BPDUs and compares each one's bridge ID to its own.
+3. If a neighbor's BPDU is inferior to the switch's current best, the switch ignores it.
+4. If a neighbor's BPDU is superior, the switch adopts that bridge ID as the root bridge identifier and recalculates its root path cost to reach it.
+5. This repeats, with switches relaying the best BPDU they've seen, until every switch in the topology agrees on the same root bridge.
+
+Topology change notification (TCN) propagation after a link/switch state change:
+1. The switch that detects the change sends a TCN BPDU out its root port, toward the root bridge.
+2. Each upstream switch that receives the TCN sends an acknowledgment and relays the TCN out its own root port, continuing toward the root.
+3. The root bridge receives the TCN and generates a new configuration BPDU with the Topology Change flag set.
+4. The root floods this configuration BPDU to all switches in the topology.
+5. Every switch that receives the flagged BPDU shortens its MAC address aging timer to the forward delay (default 15s), flushing stale entries while preserving actively communicating hosts.
+6. After the second configuration BPDU is received, each switch resets its MAC aging timer back to normal (default 300s).
+
 ## Config Patterns
 ```ios-xe
 ! Tune STP timers per VLAN (only change from defaults with a full topology audit)
