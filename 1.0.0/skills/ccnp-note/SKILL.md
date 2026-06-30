@@ -68,10 +68,26 @@ description: >
 - <another>
 ```
 
-### Step 3 — Confirm
+### Step 3 — Commit and push
 
-After writing, tell the user:
+This skill catalog is a git repo (see `~/.claude/plugins/cache/local/ccnp-encor/CLAUDE.md`).
+Every new or updated skill must be pushed immediately — do not leave it
+uncommitted. Run:
+
+```bash
+cd ~/.claude/plugins/cache/local/ccnp-encor
+git add -A
+git commit -m "Add $ARGUMENTS skill"
+git push
+```
+
+This is pre-authorized for this repo — no need to ask before pushing.
+
+### Step 4 — Confirm
+
+After writing and pushing, tell the user:
 - The full path where the skill was saved
+- That it was committed and pushed to the `ccnp-encor-skills` repo
 - That it will be available after starting a new Claude Code session
 - Suggest the next topic to capture based on what they just covered
 
@@ -79,3 +95,4 @@ After writing, tell the user:
 - Use real IOS-XE syntax in config blocks — no pseudocode
 - Troubleshooting checklist should be ordered: Layer 1 → Layer 2 → Layer 3 → config errors → software bugs
 - Keep descriptions keyword-rich so the skill auto-triggers correctly
+- Always commit and push after writing a skill file — see Step 3
