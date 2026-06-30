@@ -65,7 +65,7 @@ Tracking progress against the six domains in Cisco's ENCOR (350-401) blueprint.
 - [x] [OSPF](1.0.0/skills/ospf/SKILL.md) — LSDB, SPF, DR/BDR election, network types, neighbor adjacency
 - [x] [Advanced OSPF](1.0.0/skills/advanced-ospf/SKILL.md) — multi-area design, ABRs, LSA types 1-7, discontiguous networks, summarization, route filtering
 - [x] [OSPFv3](1.0.0/skills/ospfv3/SKILL.md) — OSPF for IPv6, link-local adjacencies, link/intra-area prefix LSAs, IPv4 support
-- [ ] Layer 3 routing protocols (BGP fundamentals)
+- [x] [BGP](1.0.0/skills/bgp/SKILL.md) — eBGP/iBGP, path attributes, AS_Path loop prevention, route summarization, MP-BGP for IPv6
 - [ ] Wireless architecture (autonomous, centralized, cloud-based, embedded)
 
 ### 4. Network Assurance (10%)
