@@ -16,9 +16,18 @@ RSTP (802.1W) replaces 802.1D's slow timer-based convergence with an active prop
 - RSTP port types: **Edge port** (host-facing, single device, cannot loop — equivalent to portfast-enabled), **Non-Edge port** (has received a BPDU, so it's switch-facing), **Point-to-point port** (full duplex link to another RSTP switch — full duplex is the fast heuristic for "only two devices on this segment").
 - Half-duplex (multi-access, e.g. hub) ports cannot use RSTP's fast mechanisms and must fall back to legacy 802.1D forwarding state behavior.
 - If a switch's RSTP handshake doesn't get a response from the far end, it assumes the neighbor is non-RSTP-capable and that port reverts to plain 802.1D timing — host devices on such a port still see ~30s of delay before forwarding.
-- Synchronization handshake when two switches connect (point-to-point, full duplex confirmed first): both propose themselves as DP for the segment → bridge ID comparison (same tiebreak as 802.1D: lowest priority, then lowest MAC) determines superior/inferior → inferior switch sets its port to RP, moves *all* non-edge ports to discarding (stops local switching) → inferior sends an agreement BPDU back to the superior switch → inferior's RP and superior's DP both move straight to forwarding → inferior repeats the same proposal/agreement process toward any of its own downstream switches.
 - RSTP ages out stale port info after missing 3 consecutive hellos — 6 seconds with default 2-second hello timer, versus the 20-second Max Age timer in 802.1D.
 - If a downstream switch fails to acknowledge (agree to) a proposal, RSTP falls back to 802.1D-style behavior on that link to avoid a forwarding loop.
+
+## Procedure
+Synchronization handshake when two switches first connect:
+1. Both switches verify the link is point-to-point by checking full-duplex status.
+2. Both switches propose themselves as the Designated Port (DP) for the segment, advertised in configuration BPDUs.
+3. Each switch compares bridge IDs using the same tiebreak as 802.1D (lowest priority, then lowest MAC) to determine which is superior and which is inferior.
+4. The inferior switch sets its local port to Root Port (RP) and immediately moves *all* its non-edge ports to discarding state, stopping local switching on those ports.
+5. The inferior switch sends an agreement BPDU back to the superior switch, signaling synchronization is underway.
+6. The inferior switch's RP and the superior switch's DP both move straight to forwarding.
+7. The inferior switch repeats this same proposal/agreement process toward any of its own downstream switches.
 
 ## Config Patterns
 ```ios-xe
