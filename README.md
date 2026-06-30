@@ -55,7 +55,8 @@ Tracking progress against the six domains in Cisco's ENCOR (350-401) blueprint.
 - [x] [VLAN Trunks & EtherChannel bundles](1.0.0/skills/vlan-trunks-and-etherchannel/SKILL.md) — VTP, DTP, LACP/PAgP, load-balancing hashes
 - [x] [IP Routing Essentials](1.0.0/skills/ip-routing-essentials/SKILL.md) — RIB/FIB, AD, static routes, PBR, VRF
 - [x] [EIGRP](1.0.0/skills/eigrp/SKILL.md) — DUAL, successor/feasible successor, wide metrics, query/reply convergence
-- [ ] Layer 3 routing protocols (OSPF, BGP fundamentals)
+- [x] [OSPF](1.0.0/skills/ospf/SKILL.md) — LSDB, SPF, DR/BDR election, network types, neighbor adjacency
+- [ ] Layer 3 routing protocols (BGP fundamentals)
 - [ ] Wireless architecture (autonomous, centralized, cloud-based, embedded)
 
 ### 4. Network Assurance (10%)
