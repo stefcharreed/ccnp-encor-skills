@@ -56,6 +56,7 @@ Tracking progress against the six domains in Cisco's ENCOR (350-401) blueprint.
 - [x] [IP Routing Essentials](1.0.0/skills/ip-routing-essentials/SKILL.md) — RIB/FIB, AD, static routes, PBR, VRF
 - [x] [EIGRP](1.0.0/skills/eigrp/SKILL.md) — DUAL, successor/feasible successor, wide metrics, query/reply convergence
 - [x] [OSPF](1.0.0/skills/ospf/SKILL.md) — LSDB, SPF, DR/BDR election, network types, neighbor adjacency
+- [x] [Advanced OSPF](1.0.0/skills/advanced-ospf/SKILL.md) — multi-area design, ABRs, LSA types 1-7, discontiguous networks, summarization, route filtering
 - [ ] Layer 3 routing protocols (BGP fundamentals)
 - [ ] Wireless architecture (autonomous, centralized, cloud-based, embedded)
 
