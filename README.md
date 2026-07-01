@@ -68,13 +68,20 @@ Tracking progress against the six domains in Cisco's ENCOR (350-401) blueprint.
 - [x] [BGP](1.0.0/skills/bgp/SKILL.md) — eBGP/iBGP, path attributes, AS_Path loop prevention, route summarization, MP-BGP for IPv6
 - [x] [Advanced BGP](1.0.0/skills/bgp-advanced/SKILL.md) — multihoming, transit AS avoidance, route maps, AS_Path filtering, BGP communities, best-path selection
 - [x] [Multicast](1.0.0/skills/multicast/SKILL.md) — IGMP, IGMP snooping, PIM dense/sparse mode, RPF, rendezvous points, Auto-RP, BSR
+- [ ] FHRP (HSRP/VRRP/GLBP)
+- [ ] IP Services (DHCP, NAT, NTP)
 - [ ] Wireless architecture (autonomous, centralized, cloud-based, embedded)
 
 ### 4. Network Assurance (10%)
-- [ ] Not yet started
+- [ ] SNMP
+- [ ] Syslog
+- [ ] NetFlow
+- [ ] IP SLA
 
 ### 5. Security (20%)
-- [ ] Not yet started
+- [ ] ACLs
+- [ ] First-hop security (port security, DHCP snooping, DAI)
+- [ ] AAA / device access
 
 ### 6. Automation (15%)
 - [ ] Not yet started
