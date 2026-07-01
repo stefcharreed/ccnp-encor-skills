@@ -10,13 +10,19 @@ notes, IOS-XE config, `show` output, or spoken description).
 
 Phase 2 (separate private repo,
 [network-troubleshooting-agent](https://github.com/stefcharreed/network-troubleshooting-agent),
-not started): combine the topic skills from this catalog into a single agent
-capable of diagnosing real network problems across multiple topic areas, not
-just one isolated skill at a time. Kept in a separate private repo since it
-will likely involve real device interaction patterns. The public README
-teases this with a CTA to reach out via LinkedIn — do not start phase 2 work
-in this repo, and do not restructure this repo's layout for portability
-unless explicitly asked.
+**planning underway, no agent code written yet**): combine the topic skills
+from this catalog into a single agent capable of diagnosing real network
+problems across multiple topic areas, not just one isolated skill at a time.
+That repo already has architecture notes (retrieval-not-reasoning design,
+a worked InterfaceDown+config-drift correlation example) and is gated on this
+catalog reaching Tier 1 coverage first — see its `ARCHITECTURE-NOTES.md` for
+the current tiering (FHRP, DHCP, NAT, ACLs, first-hop security, AAA next;
+SNMP/syslog/NetFlow/IP SLA after that; QoS/Wireless/Automation/Architecture
+deferred). Kept in a separate private repo since it will likely involve real
+device interaction patterns. The public README teases this with a CTA to
+reach out via LinkedIn — do not start phase 2 *implementation* work in this
+repo, and do not restructure this repo's layout for portability unless
+explicitly asked.
 
 ## Layout
 - `1.0.0/skills/<TOPIC>/SKILL.md` — one file per CCNP topic
