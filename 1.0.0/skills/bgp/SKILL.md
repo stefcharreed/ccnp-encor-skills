@@ -128,6 +128,16 @@ router bgp 65200
   neighbor 2001:DB8:0:12::1 activate
 ```
 
+## Design Baseline
+A deviation from this table is a question ("is this intentional here?"), never automatically a finding — real networks deviate from best practice for good and bad reasons.
+
+| Baseline practice | Why | Legitimate reasons to deviate | Source |
+|---|---|---|---|
+| Explicit inbound and outbound filtering on every eBGP session | Never accept or advertise "everything" — protects against route leaks and accidental transit | Internal test ASes in a lab | Cisco IOS hardening guide (doc 13608) |
+| iBGP peering on loopbacks with `update-source` | The session survives any single link failure | Directly connected single-link designs where the session should die with the link | ENCOR 350-401 OCG |
+| iBGP full mesh or a deliberate route-reflector/confederation design | iBGP-learned routes aren't re-advertised to other iBGP peers; a missing session silently blackholes | Two-router ASes where "full mesh" is one session | ENCOR 350-401 OCG |
+| Session authentication on all eBGP peerings | Protects the TCP session from spoofed resets and hijack | Peers that can't support it | Cisco IOS hardening guide (doc 13608) |
+
 ## Verification Commands
 | Command | What to look for |
 |---------|-----------------|
@@ -140,7 +150,13 @@ router bgp 65200
 | `show tcp brief` | Confirms the underlying TCP session is ESTAB; local port 179 = this router accepted, remote port 179 = this router initiated |
 | `show bgp ipv6 unicast summary` | Same as IPv4 summary but for the IPv6 AFI — separate Up/Down and PfxRcd per neighbor |
 
+## Intent Questions
+- Which eBGP/iBGP sessions are supposed to exist, to which peer addresses, in which ASes?
+- Which prefixes are we supposed to advertise, and which are we supposed to accept — per peer?
+- Is this router supposed to be transit for anyone, or is this an edge/stub AS?
+
 ## Troubleshooting Checklist
+0. State intent vs. observed: answer the Intent Questions above for this network, then write the one-line symptom ("should ___, isn't ___") — before running any show command.
 1. Confirm IP reachability to the peer (ping/traceroute) — for multi-hop
    sessions, confirm a route (static or IGP) actually resolves the peer's IP;
    a default route alone will not work.

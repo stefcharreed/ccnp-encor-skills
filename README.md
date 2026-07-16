@@ -31,13 +31,35 @@ device interaction patterns.
 
 If that's interesting to you, [message me on LinkedIn](https://www.linkedin.com/in/stefan-c-reed/) — happy to talk through it.
 
+## Design update (2026-07-16) — Design Baseline + intent-first troubleshooting
+
+Every topic skill gained two sections, prompted by feedback on LinkedIn from
+people with real production scar tissue:
+
+- **Intent Questions + checklist step 0** — credit to **Stephan (Steve) M.,
+  Sr. Network Engineer**: troubleshooting starts with "what is it supposed to
+  do, and what isn't it doing?" Every troubleshooting checklist now opens
+  with intent vs. observed, before any `show` command. He also suggested
+  integrating Cisco validated designs as a best-practice layer — that became
+  the Design Baseline section.
+- **Design Baseline with a "legitimate reasons to deviate" column** — credit
+  to **Phil Lafontaine, Solutions Engineer @ Cisco**: in real networks there
+  are reasons, both good and bad, why something isn't configured to best
+  practice. So a deviation from the baseline is a *question* ("is this
+  intentional here?"), never automatically a finding. Every baseline row
+  cites a named source — no source, no row.
+
+This is exactly what working in public is for — thanks to both.
+
 ## How it works
 
 - `/ccnp-note <topic>` (a Claude Code skill) takes raw study notes, textbook excerpts,
   config blocks, or `show` command output and writes a structured skill file to
   `1.0.0/skills/<topic>/SKILL.md`.
 - Every skill follows the same template: Purpose, Key Concepts, Config Patterns,
-  Verification Commands, Troubleshooting Checklist, Common Pitfalls.
+  Design Baseline (best practices with sources — and legitimate reasons to
+  deviate), Verification Commands, Intent Questions, Troubleshooting Checklist
+  (step 0: intent vs. observed), Common Pitfalls.
 - Every new or updated skill is committed and pushed immediately — see
   [CLAUDE.md](CLAUDE.md) for the repo's working rules.
 

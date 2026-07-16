@@ -122,6 +122,16 @@ interface GigabitEthernet0/1
  ospfv3 1 ipv4 area 0
 ```
 
+## Design Baseline
+A deviation from this table is a question ("is this intentional here?"), never automatically a finding — real networks deviate from best practice for good and bad reasons.
+
+| Baseline practice | Why | Legitimate reasons to deviate | Source |
+|---|---|---|---|
+| Router ID always set manually in the OSPFv3 process | With no IPv4 interface present, the RID defaults to 0.0.0.0 and adjacencies never form | — | ENCOR 350-401 OCG |
+| Same passive-interface discipline as OSPFv2 (passive default, un-passive transit) | No adjacencies or hello processing on host segments | Small all-transit topologies | Cisco IOS hardening guide (doc 13608) |
+| IPsec authentication for OSPFv3 where the platform supports it | OSPFv3 removed protocol-level auth; unauthenticated adjacencies are open to rogue neighbors | Isolated lab segments | ENCOR 350-401 OCG |
+| Current syntax (`router ospfv3`, `ospfv3 ... area`) over deprecated legacy commands | Legacy `ipv6 router ospf` config diverges from current documentation and behavior | Old platforms that only support the legacy syntax | ENCOR 350-401 OCG |
+
 ## Verification Commands
 | Command | What to look for |
 |---------|-----------------|
@@ -132,7 +142,13 @@ interface GigabitEthernet0/1
 | `show ip route ospfv3` | IPv4 routes learned via OSPFv3 when IPv4 support is enabled — same `O`/`O IA` notation as OSPFv2 |
 | `show ospfv3 neighbor` | Neighbors broken out per address family (ipv4 vs ipv6) when a router runs both under the same process |
 
+## Intent Questions
+- Which routers should form IPv6 adjacencies on which links — and is IPv4 supposed to ride this process too (dual address-family by design)?
+- What is each router's RID supposed to be (manually set), and is it unique across the domain?
+- Which prefixes should be advertised per link, given adjacencies ride link-locals and don't require a shared subnet?
+
 ## Troubleshooting Checklist
+0. State intent vs. observed: answer the Intent Questions above for this network, then write the one-line symptom ("should ___, isn't ___") — before running any show command.
 1. Layer 1/2: confirm the physical/data-link path to the expected neighbor is up — `show interfaces`.
 2. Prerequisite check: confirm `ipv6 unicast-routing` is enabled globally — without it, OSPFv3 will not initialize at all.
 3. Layer 3 adjacency: `show ospfv3 ipv6 neighbor` — missing expected neighbor; confirm both sides have a link-local address (auto-assigned or static) and matching area on the link.

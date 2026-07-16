@@ -172,6 +172,16 @@ interface GigabitEthernet0/2
  ip igmp join-group 239.1.1.1
 ```
 
+## Design Baseline
+A deviation from this table is a question ("is this intentional here?"), never automatically a finding — real networks deviate from best practice for good and bad reasons.
+
+| Baseline practice | Why | Legitimate reasons to deviate | Source |
+|---|---|---|---|
+| PIM sparse mode in production, never dense | Dense mode flood-and-prunes the entire network every ~3 minutes | Tiny lab demos of flood/prune behavior | ENCOR 350-401 OCG |
+| RP placement and discovery method (static, Auto-RP, BSR) chosen deliberately and consistent domain-wide | RP disagreement means silent join failures — receivers just never get the stream | — | ENCOR 350-401 OCG |
+| IGMP snooping left enabled on switches | Without it, every multicast frame floods the whole VLAN | Legacy hosts with broken IGMP implementations | ENCOR 350-401 OCG |
+| Multicast topology congruent with unicast unless deliberately engineered | RPF checks follow the unicast table; incongruence silently drops traffic | Deliberate separate multicast topologies via static mroutes/mBGP | ENCOR 350-401 OCG |
+
 ## Verification Commands
 | Command | What to look for |
 |---------|-----------------|
@@ -185,7 +195,13 @@ interface GigabitEthernet0/2
 | `show ip mfib <group>` | Hardware forwarding state — compare against `show ip mroute` for MRIB/MFIB consistency |
 | `show ip pim interface` | PIM mode (dense/sparse), DR, neighbor count per interface |
 
+## Intent Questions
+- Which groups are supposed to exist, sourced from where, received where?
+- Where is the RP supposed to be, and how is every router supposed to learn about it?
+- Should the multicast topology follow unicast (default RPF), or is it deliberately different here?
+
 ## Troubleshooting Checklist
+0. State intent vs. observed: answer the Intent Questions above for this network, then write the one-line symptom ("should ___, isn't ___") — before running any show command.
 1. Confirm `ip multicast-routing` is enabled globally — nothing works
    without it.
 2. Confirm `ip pim sparse-mode` (or dense-mode) is on every transit

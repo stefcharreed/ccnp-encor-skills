@@ -37,6 +37,15 @@ clear mac address-table dynamic vlan 10
 clear mac address-table dynamic address 0011.2233.4455
 ```
 
+## Design Baseline
+A deviation from this table is a question ("is this intentional here?"), never automatically a finding — real networks deviate from best practice for good and bad reasons.
+
+| Baseline practice | Why | Legitimate reasons to deviate | Source |
+|---|---|---|---|
+| Dynamic learning only; static MAC entries reserved for documented needs | Static entries never age out and mask device moves | Legacy setups that otherwise flood constantly; deliberate `drop` entries for known-bad MACs | ENCOR 350-401 OCG |
+| MAC flapping gets investigated, not cleared | Flapping usually means a loop, a mis-cabled redundant path, or spoofing | Expected during VM live migration or host failover | ENCOR 350-401 OCG |
+| One MAC (or phone+PC pair) expected per access port | Multiple MACs on an access port usually means an undocumented switch/hub/AP downstream | Hypervisor uplinks and documented daisy-chained gear | Cisco IOS hardening guide (doc 13608) |
+
 ## Verification Commands
 | Command | What to look for |
 |---------|-----------------|
@@ -47,7 +56,13 @@ clear mac address-table dynamic address 0011.2233.4455
 | `show interfaces <id> switchport` | Operational mode (access/trunk/down), access VLAN, native VLAN for one port |
 | `show interfaces status` | Condensed per-port view: Status (connected/notconnect/err-disabled), VLAN, Duplex, Speed, Type — fast first-look for down/misconfigured ports |
 
+## Intent Questions
+- Which hosts (MACs) are supposed to be learned on which ports and VLANs?
+- Is flooding here expected (silent host, freshly booted switch) or a symptom?
+- Are any static MAC entries supposed to exist — and is the reason still documented?
+
 ## Troubleshooting Checklist
+0. State intent vs. observed: answer the Intent Questions above for this network, then write the one-line symptom ("should ___, isn't ___") — before running any show command.
 1. Layer 1: `show interfaces status` — confirm `connected`, not `notconnect` or `err-disabled`.
 2. Layer 2 learning: `show mac address-table address <mac>` — confirm the expected MAC is learned on the expected port/VLAN; if missing, traffic from that host never reached this switch.
 3. Unexpected multiple MACs on one port — port is a switch/hub/hypervisor uplink, not an end host; trace downstream to find the real device.
