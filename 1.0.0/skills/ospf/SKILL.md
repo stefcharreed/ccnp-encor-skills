@@ -137,6 +137,17 @@ interface GigabitEthernet0/1
  ip ospf network point-to-point
 ```
 
+## Design Baseline
+A deviation from this table is a question ("is this intentional here?"), never automatically a finding — real networks deviate from best practice for good and bad reasons.
+
+| Baseline practice | Why | Legitimate reasons to deviate | Source |
+|---|---|---|---|
+| Static `router-id` on every OSPF router | Predictable RIDs; no churn when the source interface changes or the process restarts | Throwaway lab topologies | ENCOR 350-401 OCG |
+| `passive-interface default`, then selectively un-passive transit links | No hellos or adjacencies on access/user segments while still advertising the prefix | Small networks where nearly every interface is transit | Cisco IOS hardening guide (doc 13608) |
+| `ip ospf network point-to-point` on routed point-to-point links | Skips a pointless DR/BDR election; faster adjacency and convergence | Segments that genuinely have more than two routers | Campus LAN & WLAN Design Guide (Cisco Design Zone) |
+| `auto-cost reference-bandwidth` raised identically domain-wide | Keeps Gig/10G links distinguishable in SPF (default 100 Mbps reference makes them all cost 1) | Brownfield where a partial rollout would skew costs worse than the default | ENCOR 350-401 OCG |
+| OSPF authentication on all adjacencies | Blocks rogue or accidental adjacencies | Isolated out-of-band or lab segments | Cisco IOS hardening guide (doc 13608) |
+
 ## Verification Commands
 | Command | What to look for |
 |---------|-----------------|
@@ -146,7 +157,14 @@ interface GigabitEthernet0/1
 | `show ip ospf database router` | Per-router LSA detail — useful for confirming exactly what prefix/mask a router is advertising (e.g. confirming loopback /32 vs configured mask) |
 | `clear ip ospf process` | Restarts the OSPF process — required to pick up a new static RID, or to force DR/BDR re-election after a priority change |
 
+## Intent Questions
+- Which routers should be adjacent, on which interfaces, in which area?
+- Who is supposed to be DR on each multi-access segment — and does the design actually care?
+- Which prefixes should appear in the RIB via OSPF, learned from where?
+- What is supposed to be passive, stub, or filtered on purpose?
+
 ## Troubleshooting Checklist
+0. State intent vs. observed: answer the Intent Questions above for this network, then write the one-line symptom ("should ___, isn't ___") — before running any show command.
 1. Layer 1/2: confirm the physical link is up and both ends are in the same broadcast domain (`show interfaces`) before assuming an OSPF problem.
 2. Layer 3 adjacency stuck below Full: `show ip ospf neighbor` — note exactly which state it's stuck at (Init = one-way hello only; 2-Way on a DR segment without election yet; ExStart/Exchange = MTU mismatch is the classic cause; Loading = LSA download still in progress).
 3. No neighbor showing up at all: confirm matching subnet/mask (except point-to-point or virtual-link interfaces), matching area ID, and that the interface isn't accidentally passive (`passive-interface` blocks hello transmission/processing entirely while still advertising the prefix).

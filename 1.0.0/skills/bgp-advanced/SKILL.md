@@ -175,6 +175,16 @@ router bgp 65100
   neighbor 10.12.1.2 send-community both
 ```
 
+## Design Baseline
+A deviation from this table is a question ("is this intentional here?"), never automatically a finding — real networks deviate from best practice for good and bad reasons.
+
+| Baseline practice | Why | Legitimate reasons to deviate | Source |
+|---|---|---|---|
+| No-transit enforcement at every multihomed edge: outbound filters advertise only locally originated routes | Without it, one SP's routes leak to the other and your links become free Internet transit | You actually are a transit AS, by contract | ENCOR 350-401 OCG |
+| Route maps built on prefix lists, over raw distribute lists/ACLs | Composable match/set policy with sequenced edits instead of ACL surgery | Quick throwaway lab filters | ENCOR 350-401 OCG |
+| Community scheme documented and applied consistently | Communities are the policy language across AS boundaries — undocumented tags are landmines | Simple single-homed edges with no policy to tag | ENCOR 350-401 OCG |
+| Policy changes applied via route refresh/soft reconfiguration, not hard session resets | A hard reset drops the session — and traffic — with it | Emergency recovery from a bad policy push | ENCOR 350-401 OCG |
+
 ## Verification Commands
 | Command | What to look for |
 |---------|-----------------|
@@ -188,7 +198,13 @@ router bgp 65100
 | `show tcp brief` | Confirms underlying BGP TCP session state before troubleshooting policy issues |
 | `clear bgp ipv4 unicast <ip\|*> soft [in\|out]` | Soft-resets a peer (or all peers) to re-apply a changed route map/filter without tearing down the session |
 
+## Intent Questions
+- What is the routing policy in words: which exit should each prefix prefer, and what do we advertise to whom?
+- Is this AS ever supposed to be transit — and which filters enforce that answer?
+- What is each community value supposed to mean, and who sets and reads it?
+
 ## Troubleshooting Checklist
+0. State intent vs. observed: answer the Intent Questions above for this network, then write the one-line symptom ("should ___, isn't ___") — before running any show command.
 1. Confirm the BGP session is Established (`show bgp ipv4 unicast summary`)
    before chasing a routing-policy problem — policy never applies to a
    down session.

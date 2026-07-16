@@ -68,6 +68,16 @@ spanning-tree vlan 10 priority 4096
 spanning-tree pathcost method long
 ```
 
+## Design Baseline
+A deviation from this table is a question ("is this intentional here?"), never automatically a finding — real networks deviate from best practice for good and bad reasons.
+
+| Baseline practice | Why | Legitimate reasons to deviate | Source |
+|---|---|---|---|
+| Root and secondary root explicitly set (lowered priority) at distribution/core | Deterministic topology; defaults let the oldest/lowest-MAC switch win the election | Single-switch sites where the election is moot | Campus LAN & WLAN Design Guide (Cisco Design Zone) |
+| STP never disabled, even on "loop-free" designs | One mis-patched cable becomes a broadcast storm with no protection | Controlled lab experiments only | Campus LAN & WLAN Design Guide (Cisco Design Zone) |
+| Run RSTP or MST, not legacy 802.1D timers | Sub-second convergence vs. 30–50 s | Interop with legacy gear that supports neither | Campus LAN & WLAN Design Guide (Cisco Design Zone) |
+| Pathcost method (short vs. long) consistent across the entire L2 domain | Mixed methods produce inconsistent, hard-to-reason-about topologies | None — pick one and standardize | ENCOR 350-401 OCG |
+
 ## Verification Commands
 | Command | What to look for |
 |---------|-----------------|
@@ -77,7 +87,13 @@ spanning-tree pathcost method long
 | `show spanning-tree interface <id> [detail]` | STP state for one interface across all VLANs it carries — fastest way to audit a trunk without scrolling full `show spanning-tree` output |
 | `show spanning-tree` | Full per-VLAN, per-interface table — use only when you need the complete picture, otherwise prefer the filtered commands above |
 
+## Intent Questions
+- Which switch is supposed to be root (and secondary root) for each VLAN — by configuration or by accident?
+- Which links are supposed to forward and which are supposed to block, per the design?
+- When a link fails, what does the design expect: an alternate already waiting, or a full recalculation?
+
 ## Troubleshooting Checklist
+0. State intent vs. observed: answer the Intent Questions above for this network, then write the one-line symptom ("should ___, isn't ___") — before running any show command.
 1. Layer 1: confirm the physical link is actually up (`show interfaces status`) before assuming an STP problem — STP only reacts to what Layer 1/2 reports.
 2. Layer 2 port role/state: `show spanning-tree vlan <id>` — confirm RP/DP placement matches the expected topology and no port is unexpectedly stuck in Blocking/Listening/Learning.
 3. Port type mismatch: look for `*TYPE_Inc` in the Type column — check trunk vs access mode agreement on both ends of the link.

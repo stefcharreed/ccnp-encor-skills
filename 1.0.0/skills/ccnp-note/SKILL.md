@@ -83,13 +83,34 @@ give each its own short heading.>
 <canonical minimal config block — real IOS-XE syntax>
 ```
 
+## Design Baseline
+<Best-practice defaults for this topic, drawn from Cisco validated designs
+(Design Zone), Cisco hardening/config guides, or the ENCOR OCG. Every row
+cites a real, named source — no source, no row. A deviation from this table
+is a QUESTION ("is this intentional here?"), never automatically a finding:
+real networks deviate from best practice for good and bad reasons.>
+
+| Baseline practice | Why | Legitimate reasons to deviate | Source |
+|---|---|---|---|
+| <practice> | <what it protects> | <known-good deviation cases> | <named doc> |
+
 ## Verification Commands
 | Command | What to look for |
 |---------|-----------------|
 | `show ...` | <expected output indicator> |
 | `show ...` | <expected output indicator> |
 
+## Intent Questions
+<The 2-4 questions that define "what is this topic supposed to be doing
+here?" on a given network. Answering them is step 0 of troubleshooting —
+intent vs. observed comes before any show command.>
+- <question 1>
+- <question 2>
+
 ## Troubleshooting Checklist
+0. State intent vs. observed: answer the Intent Questions above for this
+   network, then write the one-line symptom ("should ___, isn't ___") —
+   before running any show command.
 1. <most likely failure — check this first>
 2. <next>
 3. ...
@@ -140,7 +161,14 @@ After writing and pushing, tell the user:
 
 ## Notes
 - Use real IOS-XE syntax in config blocks — no pseudocode
-- Troubleshooting checklist should be ordered: Layer 1 → Layer 2 → Layer 3 → config errors → software bugs
+- Troubleshooting checklist should be ordered: step 0 (intent vs. observed) → Layer 1 → Layer 2 → Layer 3 → config errors → software bugs
+- Design Baseline rows follow "no source, no row": every practice must trace
+  to a named, real document (a Design Zone validated design, the Cisco IOS
+  hardening guide, the ENCOR OCG) — never written from memory. If no source
+  is at hand, leave the row out rather than inventing one.
+- A Design Baseline deviation is a question for the network's operator, never
+  automatically a finding — real networks deviate from best practice for good
+  and bad reasons (credit: Stephan M. and Phil Lafontaine, see README)
 - Keep descriptions keyword-rich so the skill auto-triggers correctly
 - Always commit and push after writing a skill file — see Step 4
 - Always update the README roadmap before committing — see Step 3

@@ -50,6 +50,16 @@ interface GigabitEthernet1/0/2
  switchport trunk allowed vlan remove 99
 ```
 
+## Design Baseline
+A deviation from this table is a question ("is this intentional here?"), never automatically a finding — real networks deviate from best practice for good and bad reasons.
+
+| Baseline practice | Why | Legitimate reasons to deviate | Source |
+|---|---|---|---|
+| Keep user and management traffic off VLAN 1 | VLAN 1 carries switch control-plane traffic by default and can't be deleted; separation shrinks the blast radius | Single-switch lab setups | Cisco IOS hardening guide (doc 13608) |
+| Native VLAN moved to a dedicated, unused VLAN on all trunks | Mitigates VLAN-hopping/double-tag attacks; keeps untagged traffic out of live VLANs | Provider handoffs that mandate a specific native VLAN | Cisco IOS hardening guide (doc 13608) |
+| Explicit allowed-VLAN lists on trunks, never "all" | Bounds the broadcast/failure domain per link and documents which VLANs belong where | Fast-churn environments where list maintenance causes more outages than it prevents | Campus LAN & WLAN Design Guide (Cisco Design Zone) |
+| Unused ports shut down and parked in an unused VLAN | Removes live drops as an attack surface | Labs and frequently re-patched environments | Cisco IOS hardening guide (doc 13608) |
+
 ## Verification Commands
 | Command | What to look for |
 |---------|-----------------|
@@ -59,7 +69,13 @@ interface GigabitEthernet1/0/2
 | `show interfaces trunk` | Section 1: trunk status + native VLAN per port; Section 2: VLANs allowed; Section 3: VLANs actually forwarding (not blocked) |
 | `show running-config \| begin interface <name>` | Confirm `switchport access vlan` resolved to numeric VLAN ID even if configured by name |
 
+## Intent Questions
+- Which VLANs are supposed to exist on this switch — and which are transported through it vs. terminated on it?
+- Which ports should be access vs. trunk, and is that by design or by DTP accident?
+- What is the native VLAN supposed to be on each trunk, and does anything intentionally ride it untagged?
+
 ## Troubleshooting Checklist
+0. State intent vs. observed: answer the Intent Questions above for this network, then write the one-line symptom ("should ___, isn't ___") — before running any show command.
 1. Physical/Layer 1: interface up/up, correct cabling, no err-disable state.
 2. Layer 2 port mode mismatch: one side `access`, other side `trunk`/`dynamic` — causes VLAN leakage or no connectivity. Verify with `show interfaces trunk` and `show interfaces switchport`.
 3. Native VLAN mismatch between trunk ends — causes CDP/native VLAN mismatch errors and traffic for that VLAN to fail; confirm both sides with `show interfaces trunk`.

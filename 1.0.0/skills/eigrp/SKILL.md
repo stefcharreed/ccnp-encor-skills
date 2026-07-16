@@ -94,6 +94,16 @@ interface GigabitEthernet0/2
  ip summary-address eigrp 100 172.16.0.0 255.255.0.0
 ```
 
+## Design Baseline
+A deviation from this table is a question ("is this intentional here?"), never automatically a finding — real networks deviate from best practice for good and bad reasons.
+
+| Baseline practice | Why | Legitimate reasons to deviate | Source |
+|---|---|---|---|
+| `passive-interface default`, un-passive only transit links | No adjacencies or hello processing on access/user segments | Hub sites where nearly every interface is transit | Cisco IOS hardening guide (doc 13608) |
+| EIGRP authentication on all adjacencies | Blocks rogue neighbors from injecting routes | Isolated lab segments | Cisco IOS hardening guide (doc 13608) |
+| Summarize at topology boundaries | Query boundaries bound Active-state propagation (SIA protection) and shrink tables | Discontiguous addressing that can't summarize cleanly | ENCOR 350-401 OCG |
+| Variance left at 1 unless deliberately engineered | Unequal-cost load sharing surprises operations and complicates troubleshooting | Documented capacity engineering across known-unequal paths | ENCOR 350-401 OCG |
+
 ## Verification Commands
 | Command | What to look for |
 |---------|-----------------|
@@ -104,7 +114,13 @@ interface GigabitEthernet0/2
 | `show ip route <prefix>` | Full descriptor block per path — traffic share count (ratio for unequal-cost load balancing), total delay, minimum bandwidth, reliability, hop count |
 | `show ip protocols` | Configured K-values, metric version (classic vs wide), variance, and summarization state |
 
+## Intent Questions
+- Which routers should be EIGRP neighbors, on which interfaces, in which AS?
+- For the key prefixes, what should the successor be — and is a feasible successor supposed to exist?
+- Where are the summarization/query boundaries supposed to sit?
+
 ## Troubleshooting Checklist
+0. State intent vs. observed: answer the Intent Questions above for this network, then write the one-line symptom ("should ___, isn't ___") — before running any show command.
 1. Layer 1/2: confirm the interface toward the expected neighbor is up and the link isn't flapping — `show interfaces` and `show ip eigrp neighbors` hold-time countdown.
 2. Layer 3 adjacency: `show ip eigrp neighbors` — missing expected neighbor means hellos aren't being exchanged; check AS number match, K-value match, and that both sides are in the `network` statement's range (or otherwise enabled on that interface).
 3. Route stuck Active / slow convergence: `show ip eigrp topology` — a prefix stuck in Active (sometimes reported as SIA, Stuck-In-Active) means a query never got a reply; trace the query path toward the non-responding neighbor.

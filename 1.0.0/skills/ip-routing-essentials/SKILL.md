@@ -88,6 +88,17 @@ interface GigabitEthernet0/3
  ip address 10.0.3.1 255.255.255.0
 ```
 
+## Design Baseline
+A deviation from this table is a question ("is this intentional here?"), never automatically a finding — real networks deviate from best practice for good and bad reasons.
+
+| Baseline practice | Why | Legitimate reasons to deviate | Source |
+|---|---|---|---|
+| Dynamic routing preferred over static sprawl; every static documented with a purpose | Statics don't converge on failure and rot silently | Stub sites, last-resort defaults, deliberate security boundaries | ENCOR 350-401 OCG |
+| Floating static ADs chosen deliberately relative to the primary source | Predictable failover order instead of accidental preference | — | ENCOR 350-401 OCG |
+| Null0 discard route paired with every locally originated summary | Prevents loops for unused space inside the summary | — | ENCOR 350-401 OCG |
+| Fully specified statics (interface + next-hop) on multi-access interfaces | Directly attached statics on Ethernet force ARP for every matching destination | Point-to-point interfaces, where interface-only statics are fine | ENCOR 350-401 OCG |
+| PBR only with a documented business need | Invisible in `show ip route`; overrides destination routing in ways the next engineer won't expect | Compliance or source-based egress steering requirements | ENCOR 350-401 OCG |
+
 ## Verification Commands
 | Command | What to look for |
 |---------|-----------------|
@@ -97,7 +108,14 @@ interface GigabitEthernet0/3
 | `show ipv6 route` | IPv6 equivalent of `show ip route`, same code letters with IPv6-specific additions (O, OI, OE1/2, D, etc.) |
 | `traceroute <dest> source <src>` | Confirms the actual forwarding path hop-by-hop — essential for verifying PBR is steering traffic differently than the plain RIB path would |
 
+## Intent Questions
+- Which routes should be in the RIB, from which source (connected/static/protocol), at which AD?
+- Are statics or floating statics supposed to exist here — and is each one's purpose still documented?
+- Is any traffic supposed to bypass destination-based routing (PBR), and does anyone remember why?
+- Which VRF is this interface or route supposed to live in?
+
 ## Troubleshooting Checklist
+0. State intent vs. observed: answer the Intent Questions above for this network, then write the one-line symptom ("should ___, isn't ___") — before running any show command.
 1. Layer 1/2: confirm the outbound interface for a directly attached or fully specified static route is physically up — the route is pulled from the RIB the moment that interface goes down.
 2. Layer 3 next-hop reachability: for recursive static routes, confirm the next-hop IP actually resolves via the RIB (and not solely through a default route, which recursive statics can't use) — `show ip route <next-hop-ip>`.
 3. Route not installed as expected: compare prefix length first, then AD (`show ip route <prefix>` to see which source actually won) — remember the RIB only sees the single best route each protocol submits, so a protocol's own internal best-path choice (e.g. BGP preferring iBGP) can mean a numerically lower AD elsewhere doesn't win.

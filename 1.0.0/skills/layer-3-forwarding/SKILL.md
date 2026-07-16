@@ -71,6 +71,15 @@ interface GigabitEthernet1/0/14
  no shutdown
 ```
 
+## Design Baseline
+A deviation from this table is a question ("is this intentional here?"), never automatically a finding — real networks deviate from best practice for good and bad reasons.
+
+| Baseline practice | Why | Legitimate reasons to deviate | Source |
+|---|---|---|---|
+| Routed switch ports (`no switchport`) for point-to-point L3 links, not transit VLAN + SVI | Removes STP exposure and VLAN leakage from links that are purely Layer 3 | Link must carry more than one VLAN, or the platform lacks routed-port support | Campus LAN & WLAN Design Guide (Cisco Design Zone) |
+| One primary IPv4 subnet per interface; `secondary` addresses are migration state, not steady state | Secondaries complicate routing protocols, DHCP relay, and troubleshooting | Mid-renumbering migrations; documented legacy multi-net segments | ENCOR 350-401 OCG |
+| L2/L3 boundary placed deliberately; VLANs not spanned between closets by default | Smaller failure domains; no cross-closet STP dependence | Applications requiring L2 adjacency (clusters, live migration, legacy protocols) | Campus LAN & WLAN Design Guide (Cisco Design Zone) |
+
 ## Verification Commands
 | Command | What to look for |
 |---------|-----------------|
@@ -81,7 +90,13 @@ interface GigabitEthernet1/0/14
 | `show ipv6 interface brief \| exclude unassigned\|GigabitEthernet` | Streamlined IPv6 view limited to configured, non-Gig-default interfaces |
 | `show ip route` | Confirm a route exists to the destination network, and which source (connected/static/protocol, AD) is installed |
 
+## Intent Questions
+- Which device is supposed to be the gateway for each VLAN/subnet — and via what construct (SVI, subinterface, routed port)?
+- Where is the L2/L3 boundary supposed to sit for this segment?
+- Which next-hop should traffic toward a given remote subnet actually be using?
+
 ## Troubleshooting Checklist
+0. State intent vs. observed: answer the Intent Questions above for this network, then write the one-line symptom ("should ___, isn't ___") — before running any show command.
 1. Layer 1/2: confirm the interface or SVI's underlying link is up (`show ip interface brief` — Status/Protocol both `up`); an SVI needs at least one port in that VLAN up.
 2. ARP failure: `show ip arp` for the destination (same subnet) or next-hop (remote subnet) — missing entry means address resolution never completed, check for ARP broadcasts being filtered or the target host being down.
 3. Routing table: `show ip route` — confirm a route to the destination network exists and points to the expected next-hop/interface; missing route means it's neither connected, statically configured, nor learned dynamically.

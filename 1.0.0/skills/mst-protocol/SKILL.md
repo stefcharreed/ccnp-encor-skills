@@ -50,6 +50,16 @@ interface GigabitEthernet1/0/5
  spanning-tree mst 1 port-priority 64
 ```
 
+## Design Baseline
+A deviation from this table is a question ("is this intentional here?"), never automatically a finding — real networks deviate from best practice for good and bad reasons.
+
+| Baseline practice | Why | Legitimate reasons to deviate | Source |
+|---|---|---|---|
+| Region name, revision, and VLAN-to-instance map identical on every switch meant to share a region | Any mismatch silently splits the region and moves the boundary | Deliberate multi-region designs — then the boundary IS the design | ENCOR 350-401 OCG |
+| VLAN ranges pre-mapped to MSTIs before the VLANs exist | Remapping later changes the region config and forces re-convergence | Small, stable networks where remaps are rare and scheduled | ENCOR 350-401 OCG |
+| User VLANs kept off instance 0 (IST), mapped to numbered MSTIs | The IST carries region-wide duties; separating user traffic keeps tuning clean | Tiny deployments effectively running a single instance anyway | ENCOR 350-401 OCG |
+| Boundary strategy chosen deliberately: region is root for all VLANs, or for none | Accidental mixed boundary roles trigger PVST simulation blocks (root-inconsistent) | — | ENCOR 350-401 OCG |
+
 ## Verification Commands
 | Command | What to look for |
 |---------|-----------------|
@@ -58,7 +68,13 @@ interface GigabitEthernet1/0/5
 | `show spanning-tree mst interface <id>` | Per-interface MST detail across all instances on that port: edge/boundary status, link type, BPDU filter/guard state, and role/cost/priority per instance |
 | `show spanning-tree` | MST instance numbers and per-interface role/state — useful but does not show VLAN mappings directly, prefer `show spanning-tree mst` for VLAN-aware troubleshooting |
 
+## Intent Questions
+- Which switches are supposed to be in which MST region — and is every name/revision/mapping identical on purpose?
+- Which VLANs map to which instance by design, and why those groupings?
+- Where are the region boundaries supposed to be, and is the region supposed to be root beyond them?
+
 ## Troubleshooting Checklist
+0. State intent vs. observed: answer the Intent Questions above for this network, then write the one-line symptom ("should ___, isn't ___") — before running any show command.
 1. Layer 1/2: confirm physical link state (`show interfaces status`) before assuming an MST-specific issue — MST inherits all the same Layer 1/2 dependencies as RSTP.
 2. Region mismatch: `show spanning-tree mst configuration` on every switch expected to share a region — name, revision, and VLAN-to-instance table must match *exactly*, or switches end up in separate regions and a boundary forms where none was intended.
 3. Unintended blocking from IST/VLAN misalignment: if traffic between two access ports on the same VLAN takes an unexpected path, check whether that VLAN is sitting on the IST (instance 0) instead of a dedicated MSTI — the IST topology spans every port in the region regardless of VLAN, so it can introduce a blocking port that doesn't match the access-layer VLAN's actual traffic pattern.

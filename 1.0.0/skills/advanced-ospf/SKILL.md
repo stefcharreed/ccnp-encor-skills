@@ -99,6 +99,16 @@ router ospf 1
  area 0 filter-list prefix PREFIX-FILTER in
 ```
 
+## Design Baseline
+A deviation from this table is a question ("is this intentional here?"), never automatically a finding — real networks deviate from best practice for good and bad reasons.
+
+| Baseline practice | Why | Legitimate reasons to deviate | Source |
+|---|---|---|---|
+| Every area physically adjacent to Area 0; virtual links as temporary fixes only | OSPF's inter-area loop-prevention model assumes a contiguous backbone; virtual links are fragile design debt | Migrations or acquisitions in flight — dated, with a removal plan | ENCOR 350-401 OCG |
+| Inter-area summarization at ABRs where addressing allows | Smaller LSDBs; SPF impact contained per area | Discontiguous legacy addressing that can't summarize cleanly | ENCOR 350-401 OCG |
+| ABR count and placement deliberate per area | ABRs keep one LSDB and SPF tree per area — accidental ABRs carry hidden load | — | ENCOR 350-401 OCG |
+| Area boundaries drawn for LSDB scale and flood containment | Areas exist to bound SPF and flooding; wrong boundaries add cost without benefit | Small domains where single-area is genuinely simpler | Campus LAN & WLAN Design Guide (Cisco Design Zone) |
+
 ## Verification Commands
 | Command | What to look for |
 |---------|-----------------|
@@ -110,7 +120,13 @@ router ospf 1
 | `show ip route ospf` | Confirms summarization: a single summary entry plus `is a summary ... Null0` discard route, with component routes suppressed beyond the ABR |
 | `show ip protocols` | Configured `area range` and `area filter-list` statements under the OSPF process |
 
+## Intent Questions
+- Which areas are supposed to exist, and which routers are supposed to be the ABRs?
+- What summarization or filtering is supposed to happen at which ABR?
+- Which routes should appear as `O` vs. `O IA` from this router's perspective?
+
 ## Troubleshooting Checklist
+0. State intent vs. observed: answer the Intent Questions above for this network, then write the one-line symptom ("should ___, isn't ___") — before running any show command.
 1. Layer 1/2: confirm the physical/data-link path toward the expected ABR or neighbor is up — `show interfaces`.
 2. Layer 3 adjacency: `show ip ospf neighbor` — confirm the expected neighbor is FULL; check that the interface is in the area you expect via `show ip ospf interface brief`.
 3. Missing inter-area routes: confirm the router claiming to be an ABR actually has an interface in Area 0 — a router touching two non-backbone areas without an Area 0 interface will not inject routes between them.

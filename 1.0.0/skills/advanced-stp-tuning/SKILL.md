@@ -71,6 +71,16 @@ interface TenGigabitEthernet1/1/3
  udld port aggressive
 ```
 
+## Design Baseline
+A deviation from this table is a question ("is this intentional here?"), never automatically a finding — real networks deviate from best practice for good and bad reasons.
+
+| Baseline practice | Why | Legitimate reasons to deviate | Source |
+|---|---|---|---|
+| BPDU guard on every portfast/edge access port | Any BPDU on a host port err-disables it before a loop can form | A documented downstream switch on that port (then it isn't a host port) | Cisco IOS hardening guide (doc 13608) |
+| Root guard on designated ports toward switches that must never become root | Root placement can't be hijacked by rogue or misconfigured gear | Ports toward switches legitimately allowed to take root during planned changes | Campus LAN & WLAN Design Guide (Cisco Design Zone) |
+| Loop guard or aggressive UDLD on fiber uplinks | Unidirectional fiber faults otherwise create silent forwarding loops | Copper-only plants where the failure mode is far less common | Campus LAN & WLAN Design Guide (Cisco Design Zone) |
+| BPDU filter avoided by default | It silently disables loop protection on the port | Specific documented edge cases, e.g. a provider handoff that must not see BPDUs | ENCOR 350-401 OCG |
+
 ## Verification Commands
 | Command | What to look for |
 |---------|-----------------|
@@ -82,7 +92,13 @@ interface TenGigabitEthernet1/1/3
 | `show udld neighbors` | Confirms `Bidirectional` state per UDLD-enabled neighbor link |
 | `show udld <interface-id>` | Detailed UDLD state, device IDs, and originating/return port IDs for one link |
 
+## Intent Questions
+- Where is root supposed to sit, and which ports are supposed to be guarding that placement?
+- Which ports are supposed to be portfast/edge — and is BPDU guard backing every one of them?
+- What is supposed to happen when a BPDU arrives on an access port here: err-disable, revert to normal STP, or nothing?
+
 ## Troubleshooting Checklist
+0. State intent vs. observed: answer the Intent Questions above for this network, then write the one-line symptom ("should ___, isn't ___") — before running any show command.
 1. Layer 1: for suspected unidirectional link issues, confirm physical fiber/cable integrity and `show udld neighbors` state — `Bidirectional` expected, anything else signals one strand is broken even though line protocol shows up.
 2. Layer 2 inconsistent state: `show spanning-tree inconsistentports` — a populated list with `Root Inconsistent` means root guard tripped (unexpected superior BPDU from a downstream device); `Loop Inconsistent` means loop guard tripped (BPDUs stopped arriving on a root/alternate port).
 3. Err-disabled ports: `show interfaces status` for `err-disabled`, then check syslog for `%SPANTREE-2-BLOCK_BPDUGUARD` (BPDU guard trip — usually a switch/hub plugged into a portfast access port) or other errdisable causes.

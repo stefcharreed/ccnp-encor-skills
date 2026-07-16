@@ -47,6 +47,15 @@ interface GigabitEthernet1/0/5
  spanning-tree link-type shared
 ```
 
+## Design Baseline
+A deviation from this table is a question ("is this intentional here?"), never automatically a finding — real networks deviate from best practice for good and bad reasons.
+
+| Baseline practice | Why | Legitimate reasons to deviate | Source |
+|---|---|---|---|
+| `spanning-tree mode rapid-pvst` (or MST) as the domain-wide mode | Sub-second convergence; alternate/edge roles behave as designed | Legacy neighbors that force 802.1D fallback anyway | Campus LAN & WLAN Design Guide (Cisco Design Zone) |
+| Edge (portfast) only on true single-host ports, paired with BPDU guard | Until a BPDU arrives, an edge port forwards instantly — a switch plugged in there is a loop window | Documented non-bridging devices on the port | Campus LAN & WLAN Design Guide (Cisco Design Zone) |
+| Switch-to-switch links run full duplex so RSTP treats them as point-to-point | Half duplex forces the slow 802.1D fallback on that segment | Legacy hubs/shared media (rare) | ENCOR 350-401 OCG |
+
 ## Verification Commands
 | Command | What to look for |
 |---------|-----------------|
@@ -56,7 +65,13 @@ interface GigabitEthernet1/0/5
 | `show spanning-tree root` | Root ID and cost per VLAN — same as 802.1D, root path cost should still be 0 on the root bridge |
 | `show spanning-tree vlan <id> detail` | Topology change count — still relevant under RSTP for detecting flapping links |
 
+## Intent Questions
+- Which ports are supposed to be edge (host-facing) vs. switch-facing?
+- Which links should be point-to-point (full duplex) so proposal/agreement fast convergence applies?
+- Where should the alternate port sit when the topology is healthy?
+
 ## Troubleshooting Checklist
+0. State intent vs. observed: answer the Intent Questions above for this network, then write the one-line symptom ("should ___, isn't ___") — before running any show command.
 1. Layer 1: confirm full duplex on the link (`show interfaces status` / `show interfaces <id>`) — RSTP's fast point-to-point path requires full duplex; half duplex forces the slow 802.1D fallback.
 2. Layer 2 role/state: `show spanning-tree vlan <id>` — verify the port has an Alternate or Backup role where redundancy is expected, not stuck as a plain blocking/discarding port with no role context.
 3. Edge port misconfiguration: a switch-to-switch link mistakenly configured with `spanning-tree portfast` skips the proposal/agreement safety check and can create a transient loop — confirm edge ports are genuinely host-only.

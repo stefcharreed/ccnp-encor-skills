@@ -133,6 +133,16 @@ interface GigabitEthernet1/0/2
 port-channel load-balance src-dst-mixed-ip-port
 ```
 
+## Design Baseline
+A deviation from this table is a question ("is this intentional here?"), never automatically a finding — real networks deviate from best practice for good and bad reasons.
+
+| Baseline practice | Why | Legitimate reasons to deviate | Source |
+|---|---|---|---|
+| DTP disabled: ports hardcoded `access` or `trunk`, plus `switchport nonegotiate` | Prevents negotiation-based VLAN hopping and accidental trunks | Lab convenience | Cisco IOS hardening guide (doc 13608) |
+| VTP transparent/off unless VTP is deliberately operated (v3 with a designated primary) | A stale switch with a higher revision number can wipe the domain's VLAN database | Disciplined VTPv3 deployments with a designated primary server | Cisco IOS hardening guide (doc 13608) |
+| LACP (active) over PAgP or static `on` | Open standard, and adjacency failure catches degraded members that `on` mode keeps forwarding into | NIC teams or appliances that only support static bundling | Campus LAN & WLAN Design Guide (Cisco Design Zone) |
+| Load-balance hash includes fields that actually vary; member counts at powers of two | A non-varying hash field concentrates all traffic on one member | Two-member channels where nearly any hash spreads acceptably | ENCOR 350-401 OCG |
+
 ## Verification Commands
 | Command | What to look for |
 |---------|-----------------|
@@ -148,7 +158,13 @@ port-channel load-balance src-dst-mixed-ip-port
 | `show pagp neighbor` / `show pagp counters` | PAgP equivalents of the LACP neighbor/counter commands |
 | `show etherchannel load-balance` | The active load-balancing hash algorithm per traffic type (non-IP, IPv4, IPv6) |
 
+## Intent Questions
+- Which links are supposed to be trunks — and are they trunks by explicit config or by DTP negotiation?
+- Which bundles should exist, with which members, using which protocol (LACP/PAgP/static) — and why that choice?
+- Is VTP supposed to be managing VLANs here at all, and if so, which switch is the authority?
+
 ## Troubleshooting Checklist
+0. State intent vs. observed: answer the Intent Questions above for this network, then write the one-line symptom ("should ___, isn't ___") — before running any show command.
 1. Layer 1: confirm all member interfaces are physically up and matched on speed/duplex (`show interfaces status`) — mismatched speed/duplex prevents clean bundling.
 2. Layer 2 trunk/DTP: `show interface <id> trunk` and `show interfaces <id> switchport` — confirm the negotiated mode and that both ends agree (or that `nonegotiate` + matching static modes are used); also confirm VTP domain matches, since DTP requires it.
 3. EtherChannel member state: `show etherchannel summary` — flags other than `P` (e.g. `I` individual, `s` suspended) on a member mean it never joined the bundle; cross-check `show lacp counters` / `show pagp counters` for one-sided packet loss.
