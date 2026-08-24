@@ -4,7 +4,9 @@ description: >
   Use this skill when troubleshooting or configuring ip-routing-essentials on IOS-XE.
   Invoke when the user asks about: RIB, FIB, administrative distance, prefix
   length, ECMP, unequal-cost load balancing, static route, floating static
-  route, null route, policy-based routing, VRF.
+  route, null route, policy-based routing, VRF, ARP resolution, incomplete
+  ARP entry, proxy ARP, local vs remote forwarding decision, ICMP
+  destination host unreachable.
 ---
 
 ## Purpose
@@ -25,6 +27,11 @@ IP routing essentials cover how a router decides which path wins (prefix length,
 - **Null route** (`ip route <summary-net> <mask> Null0`) drops any traffic matching a summarized range that doesn't match a more specific real route — prevents routing loops on a router that's advertising (or receiving) a summarized block it doesn't fully use, without needing an ACL.
 - IPv6 static routing mirrors IPv4: requires `ipv6 unicast-routing` enabled globally, then `ipv6 route <prefix>/<length> {interface-id | [interface-id] next-hop-ip}` — if the next hop is a link-local address, the route must be fully specified (interface + next-hop) since link-locals aren't globally routable on their own.
 - **Policy-based routing (PBR)** overrides destination-based forwarding using packet characteristics (protocol, source/destination IP, etc.) to set a different next hop — verifies next-hop reachability in the RIB before using it, supports a prioritized list of fallback next hops, and silently fails closed (normal RIB forwarding) if none of the specified next hops are reachable. PBR does not modify the RIB itself — `show ip route` looks unchanged even with active PBR policies, which complicates troubleshooting since the conditional next hop isn't visible there.
+- **Forwarding decides local vs. remote BEFORE any ARP happens.** The sender ANDs the destination IP against its own mask: same subnet → deliver locally, ARP for the destination itself; different subnet → ARP for the **default gateway** instead, and the destination IP never gets ARPed for at all. Getting this order right explains most "why isn't it ARPing for that?" confusion.
+- **When ARP resolution fails on-subnet**, the sequence is: ARP cache miss → the IP packet is **queued** (most stacks hold only *one* packet per pending entry; the rest are dropped) → ARP Request broadcast (`FF:FF:FF:FF:FF:FF`, opcode 1, target HW `00:00:00:00:00:00`) → switch floods it VLAN-wide and learns only the *sender's* MAC → no reply → retries (Linux ~3× at 1s, IOS every 2s) → entry marked **INCOMPLETE** → queued packet dropped.
+- **The "Destination Host Unreachable" you see for a same-subnet failure is generated locally by your own IP stack** — nothing ever left the wire, and no router was involved. For a **different-subnet** failure the router does the ARPing and returns a genuine **ICMP Type 3 Code 1**. Same message, completely different origin — a classic exam distinction.
+- **Proxy ARP** (`ip proxy-arp`, historically **on by default** on Cisco router interfaces) makes a router answer an ARP for an IP it has a route to, supplying its own MAC. It silently masks host misconfiguration — a wrong subnet mask still "works" until proxy ARP is disabled elsewhere. **The tell: `arp -a` on the host shows several different IPs sharing one MAC.** It's also an MITM vector, so `no ip proxy-arp` is standard hardening.
+- A **directly attached static route on an Ethernet interface** forces an ARP for *every* destination matching that route (see Common Pitfalls) — this is the same ARP machinery, which is why fully specified statics are preferred on multi-access links.
 - **VRF (Virtual Routing and Forwarding)** creates isolated logical routers on one physical box — separate routing/forwarding tables per VRF, allowing overlapping IP address ranges across VRFs with no conflict. All interfaces default to the **global VRF** (the standard routing table) until explicitly assigned elsewhere. Conceptually similar to VLANs on a switch, but VRF segmentation operates at Layer 3 with full per-VRF dynamic routing rather than 802.1Q tagging at Layer 2.
 
 ## Procedure
@@ -34,6 +41,16 @@ BGP path vector loop avoidance (illustrative 4-AS example: AS1–AS2–AS4–AS3
 3. R4 advertises the prefix to R3 (AS 3), adding AS 4 to the AS_Path (now "4 2 1").
 4. R3 advertises the prefix back toward R1 and R2, adding AS 3 to the AS_Path (now "3 4 2 1").
 5. R1 receives this advertisement, detects its own AS (1) already present in the AS_Path, and rejects it as a loop; R2 does the same upon detecting AS 2 in the path.
+
+ARP resolution failure, same subnet (Host A 10.1.1.10/24 → 10.1.1.99, which doesn't exist):
+1. **L3 decision:** 10.1.1.99 ANDs into 10.1.1.0/24 — same subnet, so local delivery. No gateway involved.
+2. **ARP cache lookup** — miss.
+3. **Packet queued**, not sent — L2 can't frame it without a destination MAC. One packet held; further packets to that IP are dropped.
+4. **ARP Request broadcast** — Ethernet dst `FF:FF:FF:FF:FF:FF`, src A's MAC, EtherType `0x0806`, opcode 1, target proto 10.1.1.99, target HW all zeros.
+5. **Switch floods** it out every port in the VLAN except ingress, and learns **A's** MAC on the ingress port. It learns nothing about .99 — switches only learn from frames that arrive.
+6. **No reply** — nothing owns .99.
+7. **Retries**, then the entry is marked **INCOMPLETE** (`Internet 10.1.1.99 - Incomplete ARPA`).
+8. **Queued packet dropped**; the local stack reports Destination Host Unreachable.
 
 Creating a VRF and assigning it to an interface:
 1. Create the VRF routing table: `vrf definition <vrf-name>`.
@@ -107,6 +124,9 @@ A deviation from this table is a question ("is this intentional here?"), never a
 | `show ip route vrf <vrf-name>` | The routing table for one specific VRF — entries here never appear in the global `show ip route` output |
 | `show ipv6 route` | IPv6 equivalent of `show ip route`, same code letters with IPv6-specific additions (O, OI, OE1/2, D, etc.) |
 | `traceroute <dest> source <src>` | Confirms the actual forwarding path hop-by-hop — essential for verifying PBR is steering traffic differently than the plain RIB path would |
+| `show ip arp` / `show ip arp <ip>` | IP→MAC bindings and age. **`Incomplete` means ARP was attempted and nobody answered** — the host is absent, off, or on the wrong VLAN |
+| `show ip interface <id> \| include Proxy` | Whether proxy ARP is enabled — check this before concluding a host's mask is correct |
+| `show arp timeout` / `show ip interface <id>` | ARP cache timeout (default 4hr) — compare against the switch's 300s MAC aging when diagnosing sustained unicast flooding |
 
 ## Intent Questions
 - Which routes should be in the RIB, from which source (connected/static/protocol), at which AD?
@@ -132,3 +152,7 @@ A deviation from this table is a question ("is this intentional here?"), never a
 - Assuming the lowest AD overall always wins in the RIB — it's actually the lowest AD *among routes a process actually submits*, and a routing protocol's internal best-path selection (e.g. BGP) can submit a higher-AD path (iBGP at 200) even when a lower-AD option (eBGP at 20) exists elsewhere in that protocol's table.
 - Mixing up ECMP (automatic, equal-metric, protocol-default-enabled) with EIGRP's unequal-cost load balancing (manual, different-metric, must be explicitly configured) — they produce very different traffic ratios and only EIGRP supports the unequal-cost variant.
 - Forgetting that assigning `vrf forwarding <vrf-name>` to an interface strips its previously configured IP address — always re-apply the IP address afterward, in that order.
+- **Expecting a host to ARP for an off-subnet destination** — it never will. It ARPs for its default gateway and sends the frame there with the destination IP unchanged. If you're capturing and don't see an ARP for the far-end host, that's correct behavior, not a fault.
+- **Reading "Destination Host Unreachable" as proof a router replied.** On a same-subnet ARP failure that message is generated locally and no packet ever left the host; only the different-subnet case produces a real ICMP Type 3 Code 1 from a router.
+- **Letting proxy ARP hide a bad subnet mask.** Connectivity works, the config is wrong, and it breaks later for reasons that look unrelated. Multiple IPs mapping to one MAC in `arp -a` is the signature.
+- Diagnosing an `Incomplete` ARP entry as a routing problem — it's purely L2/L1: wrong VLAN, host down, or port in the wrong access VLAN. The RIB is irrelevant when the destination is on-subnet.
