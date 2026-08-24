@@ -120,6 +120,27 @@ pick a single best path among multiple candidates.
   entire point of aggregating. **RFC 6472 (BCP 172)** recommends against
   AS_SET/AS_CONFED_SET; **RFC 9774** deprecates them outright. Know the
   mechanism for the exam; don't reach for it in a design.
+- **`aggregate-address` with no flags still advertises every component** —
+  it *adds* the summary rather than replacing the specifics, so the table
+  gets larger, not smaller. `summary-only` is what suppresses them.
+- **The flags do three separate jobs — don't reason about them as one
+  flat list.** *What leaves the router:* `summary-only` (suppress all
+  components) and `suppress-map` (suppress only routes the map
+  **permits**; a `deny` or no-match keeps the component advertised).
+  *What the aggregate looks like:* `as-set` and `attribute-map`.
+  *Which components get a vote in building it:* `advertise-map` — when
+  present, **only** routes it matches contribute their AS_SET membership
+  and communities to the aggregate.
+- **`advertise-map` and `unsuppress-map` are different commands at
+  different config levels, and are constantly confused.**
+  `advertise-map` is an `aggregate-address` option selecting which
+  components *build* the aggregate — it advertises nothing extra.
+  **`neighbor <ip> unsuppress-map <map>` is a neighbor command** that
+  leaks specific already-suppressed components back out **to one peer**,
+  after `summary-only` suppressed them for everyone.
+- **An aggregate only generates if at least one more-specific component is
+  present in the BGP table** — no component, no aggregate, and no error
+  message either.
 
 ## Config Patterns
 ```ios-xe
@@ -212,6 +233,28 @@ router bgp 65100
   neighbor 10.12.1.2 send-community both
 ```
 
+```ios-xe
+! Shrink the table -- the common case
+aggregate-address 172.16.0.0 255.255.0.0 summary-only
+
+! Suppress most components but keep one specific visible to everyone
+! NOTE: the route-map PERMITS what gets suppressed
+ip prefix-list KEEP-SPECIFIC permit 172.16.3.0/24
+route-map SUPPRESS-REST deny 10
+ match ip address prefix-list KEEP-SPECIFIC
+route-map SUPPRESS-REST permit 20
+router bgp 65000
+ aggregate-address 172.16.0.0 255.255.0.0 suppress-map SUPPRESS-REST
+
+! Suppress for everyone, then leak one specific to a single peer
+router bgp 65000
+ aggregate-address 172.16.0.0 255.255.0.0 summary-only
+ neighbor 10.1.1.1 unsuppress-map LEAK-TO-PEER
+
+! Restrict which components build the aggregate's AS_SET / communities
+ aggregate-address 172.16.0.0 255.255.0.0 as-set advertise-map PICK-CONTRIBUTORS
+```
+
 ## Design Baseline
 A deviation from this table is a question ("is this intentional here?"), never automatically a finding — real networks deviate from best practice for good and bad reasons.
 
@@ -233,6 +276,7 @@ A deviation from this table is a question ("is this intentional here?"), never a
 | `show bgp ipv4 unicast community <community>` | Lists only routes tagged with a specific BGP community |
 | `show ip bgp <network>` | Full path attribute detail including Community, Origin, metric, localpref for one prefix |
 | `show tcp brief` | Confirms underlying BGP TCP session state before troubleshooting policy issues |
+| `show bgp ipv4 unicast` (status column) | **`s>` marks a suppressed component.** If `summary-only` is configured but components show no `s`, the aggregate never formed -- confirm a more-specific actually exists in the table |
 | `clear bgp ipv4 unicast <ip\|*> soft [in\|out]` | Soft-resets a peer (or all peers) to re-apply a changed route map/filter without tearing down the session |
 
 ## Intent Questions
@@ -306,6 +350,18 @@ A deviation from this table is a question ("is this intentional here?"), never a
   the aggregate globally.
 - Reading a missing ATOMIC_AGGREGATE as a fault — with a full `as-set` its
   absence is correct, because no path information was discarded.
+- **Configuring `aggregate-address` without `summary-only` and expecting a
+  smaller table** — the components keep being advertised alongside the new
+  summary, so the prefix count goes *up*.
+- **Reaching for `advertise-map` when the goal is leaking a suppressed
+  route to one peer** — that is `neighbor <ip> unsuppress-map`.
+  `advertise-map` only decides which components shape the aggregate.
+- **Backwards `suppress-map` logic** — the route map **permits** the routes
+  you want *suppressed*; a `deny` or no-match leaves the component
+  advertised. This reads inverted to most people the first time.
+- Debugging a missing aggregate as a filtering problem when no component
+  route exists in the BGP table — without a more-specific present the
+  aggregate is silently never generated.
 - Using `set community` without `additive` when the intent was to add a
   community alongside existing ones — overwrites instead.
 - Assuming weight or local preference will influence eBGP peers — weight
