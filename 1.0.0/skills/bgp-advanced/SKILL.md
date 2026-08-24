@@ -4,7 +4,9 @@ description: >
   Use this skill when troubleshooting or configuring advanced BGP route
   filtering and manipulation on IOS-XE. Invoke when the user asks about:
   BGP multihoming, transit AS, distribute lists, prefix lists, AS_Path
-  ACLs, route maps for BGP, BGP communities, BGP best-path selection.
+  ACLs, route maps for BGP, BGP communities, BGP best-path selection,
+  route aggregation, aggregate-address, AS_SET, ATOMIC_AGGREGATE,
+  AGGREGATOR, attribute-map, summary-only.
 ---
 
 ## Purpose
@@ -83,6 +85,41 @@ pick a single best path among multiple candidates.
   engineering: advertise a summary from both edge routers and a longer,
   more-specific prefix from only the router that should receive that
   traffic.
+
+- **Route aggregation and AS_SET.** Plain `aggregate-address <net> <mask>
+  summary-only` originates the summary from the local AS and **discards the
+  component routes' AS_PATH information entirely** — which removes BGP's
+  own loop protection for those prefixes. `as-set` re-adds it by attaching
+  an **AS_SET** segment (AS_PATH segment type 1, unordered, displayed in
+  curly braces `{300,400,500}`) listing every ASN from the component paths.
+  AS_SEQUENCE is type 2 (ordered, displayed bare).
+- **An AS_SET counts as AS_PATH length 1** regardless of how many ASNs it
+  contains — fifty ASNs in a set still add only 1 to path length for
+  best-path comparison.
+- **AS_PATH loop detection does not distinguish segment types.** If an AS
+  appears anywhere in the AS_PATH — AS_SET included — that AS rejects the
+  advertisement. So an AS whose prefix was a component will **drop the
+  entire aggregate**, losing reachability to *every other component inside
+  it*, not just its own. Cisco's guidance is therefore to selectively
+  **omit** specific ASNs from the AS_SET rather than include them all.
+- **ATOMIC_AGGREGATE signals that path information was lost:** set with
+  plain `summary-only`; **not** set with a full `as-set` (nothing was
+  lost); **should** be set when an `as-set` deliberately omits some ASNs.
+  **AGGREGATOR** (aggregating router's ASN + router-ID) is attached either
+  way.
+- **The aggregate inherits attributes from its component routes — including
+  the union of their communities.** A single component carrying
+  `no-export` will silently keep the aggregate inside the AS. Strip or
+  rewrite with `attribute-map`. ORIGIN resolves to the least-preferred
+  value present (any `incomplete` component makes the aggregate
+  `incomplete`).
+- **Why AS_SET is effectively dead in production:** AS_SET membership is
+  part of the AS_PATH attribute, so **any component flap changes the
+  attribute and forces global re-advertisement of the aggregate** — the
+  summary propagates instability instead of damping it, which inverts the
+  entire point of aggregating. **RFC 6472 (BCP 172)** recommends against
+  AS_SET/AS_CONFED_SET; **RFC 9774** deprecates them outright. Know the
+  mechanism for the exam; don't reach for it in a design.
 
 ## Config Patterns
 ```ios-xe
@@ -257,6 +294,18 @@ A deviation from this table is a question ("is this intentional here?"), never a
   pair.
 - Forgetting `neighbor <ip> send-community` — communities set in a route
   map silently never leave the local router without this.
+- **Assuming `as-set` only costs the component's own AS its route** — the
+  AS whose ASN appears in the AS_SET rejects the **whole aggregate**, so it
+  also loses every other prefix summarized inside it.
+- **Letting an aggregate inherit `no-export` (or any component community)
+  by accident** — the summary then never leaves the AS, and `show ip bgp`
+  on the local router looks perfectly healthy. Use `attribute-map` to
+  normalize communities on aggregates.
+- Expecting `as-set` to make an aggregate *more* stable — it does the
+  opposite: every component flap rewrites the AS_PATH and re-advertises
+  the aggregate globally.
+- Reading a missing ATOMIC_AGGREGATE as a fault — with a full `as-set` its
+  absence is correct, because no path information was discarded.
 - Using `set community` without `additive` when the intent was to add a
   community alongside existing ones — overwrites instead.
 - Assuming weight or local preference will influence eBGP peers — weight
