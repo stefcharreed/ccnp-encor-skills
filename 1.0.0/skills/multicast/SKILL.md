@@ -35,6 +35,33 @@ receivers are.
   map across, **32 different multicast IP addresses can collide on the same
   multicast MAC** (e.g. 239.255.1.1 and 239.127.1.1 both map to
   01:00:5E:7F:01:01) — a real source of unexpected traffic at the NIC level.
+- **The I/G bit (individual/group), a.k.a. the unicast/multicast bit:** the
+  **least significant bit of the first byte** of the destination MAC.
+  `0` = individual (unicast), `1` = group (multicast or broadcast).
+  **Shortcut: read the first byte in hex — odd = group, even = unicast.**
+  `01:00:5E:...` odd → multicast · `FF:FF:FF:FF:FF:FF` odd → broadcast ·
+  `00:12:34:...` even → unicast. **It sits there because Ethernet transmits
+  each byte least-significant-bit first, so the I/G bit is literally the
+  first bit on the wire** — a NIC can tell "is this for a group?" before the
+  other 47 bits arrive.
+- **U/L bit (universal/local)** is its neighbour, the *second* least
+  significant bit of byte 1: `0` = globally unique OUI-assigned (burned in),
+  `1` = locally administered. **This is the bit that flips when a MAC is
+  randomised or spoofed** — a locally-administered MAC on a corporate
+  segment is worth a second look.
+- ⚠️ **Terminology trap — "low-order" is used at two different scopes one
+  sentence apart** (the ENCOR OCG does exactly this and does not flag it):
+  the "**low-order bit of the first byte**" is the I/G bit — scope is **one
+  byte**. The "**low-order 23 bits**" are the copied group bits — scope is
+  the whole **48-bit address**. Same phrase, one bit versus twenty-three.
+- **Counting the fixed part two ways, both correct:** "24 bits of `01:00:5E`
+  plus a 25th bit of 0" and "the high-order 25 bits are fixed" are the same
+  statement. 48 − 25 = the 23 bits that carry the group.
+- **Where the discarded bits actually go:** of the 32 IP bits, 9 never make
+  the trip — the 4-bit `1110` multicast prefix (carries no group
+  information) plus **5 high-order bits of the 28-bit group ID**. Only those
+  5 are real information loss, which is exactly why the collision ratio is
+  2^5 = 32 and not something larger.
 - **IGMP versions:** IGMPv1 (RFC 1112, obsolete) — IGMPv2 (RFC 2236,
   standard) adds leave-group messages and querier election — IGMPv3
   (RFC 3376) adds source filtering (include/exclude mode) and is required
