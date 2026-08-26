@@ -25,6 +25,27 @@ IP routing essentials cover how a router decides which path wins (prefix length,
 - Static route types: **Directly attached** (`ip route <net> <mask> <interface>`) — only valid on point-to-point interfaces without ARP (e.g. serial); using it on an Ethernet/ARP-capable interface forces ARP for every destination matching the route and can cause instability. **Recursive** (`ip route <net> <mask> <next-hop-ip>`) — requires a second RIB lookup to resolve the next-hop IP to an interface; cannot resolve via a default route (0.0.0.0/0) entry. **Fully specified** (`ip route <net> <mask> <interface> <next-hop-ip>`) — both interface and next-hop IP given, avoids the recursive lookup and ARP issues, and the route is pulled from the RIB if the named interface goes down.
 - **Floating static routes** use a deliberately higher AD than the primary route so they only get installed as backup when the primary is withdrawn — common pattern for backup links behind a preferred dynamic-routing or lower-AD static path.
 - **Null route** (`ip route <summary-net> <mask> Null0`) drops any traffic matching a summarized range that doesn't match a more specific real route — prevents routing loops on a router that's advertising (or receiving) a summarized block it doesn't fully use, without needing an ACL.
+- **Why the null route actually breaks the loop:** without it, a packet for
+  unused space inside your summary misses every specific route, falls back
+  to the **default route**, and goes back upstream — where the upstream
+  router matches your summary and returns it. With it, the summary prefix
+  (say /16) beats the default (/0) on longest-match, so the packet is
+  discarded locally instead. **The real subnets are longer prefixes and
+  still win**, so only the phantom space hits Null0.
+- **You usually don't configure it — summarization installs it for you:**
+
+| Where the summary is created | Discard route |
+|---|---|
+| BGP `aggregate-address` | Auto-installed to Null0 |
+| EIGRP `ip summary-address eigrp` | Auto-installed, **AD 5** |
+| OSPF `area range` on an ABR | Auto-installed (`discard-route`; can be disabled) |
+| Static summary | You write it: `ip route <net> <mask> Null0` |
+
+  It looks like a black hole in `show ip route` and gets deleted by mistake —
+  removing it re-opens the loop. Drops are **silent** by default (no ICMP
+  unreachable), controlled by `ip unreachables` on the Null0 interface.
+  Pointing a route at Null0 deliberately is also how blackholing/RTBH works.
+
 - IPv6 static routing mirrors IPv4: requires `ipv6 unicast-routing` enabled globally, then `ipv6 route <prefix>/<length> {interface-id | [interface-id] next-hop-ip}` — if the next hop is a link-local address, the route must be fully specified (interface + next-hop) since link-locals aren't globally routable on their own.
 - **Policy-based routing (PBR)** overrides destination-based forwarding using packet characteristics (protocol, source/destination IP, etc.) to set a different next hop — verifies next-hop reachability in the RIB before using it, supports a prioritized list of fallback next hops, and silently fails closed (normal RIB forwarding) if none of the specified next hops are reachable. PBR does not modify the RIB itself — `show ip route` looks unchanged even with active PBR policies, which complicates troubleshooting since the conditional next hop isn't visible there.
 - **Forwarding decides local vs. remote BEFORE any ARP happens.** The sender ANDs the destination IP against its own mask: same subnet → deliver locally, ARP for the destination itself; different subnet → ARP for the **default gateway** instead, and the destination IP never gets ARPed for at all. Getting this order right explains most "why isn't it ARPing for that?" confusion.
