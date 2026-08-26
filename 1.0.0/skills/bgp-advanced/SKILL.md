@@ -142,6 +142,28 @@ pick a single best path among multiple candidates.
   present in the BGP table** — no component, no aggregate, and no error
   message either.
 
+### MED: a missing MED is a number, not a third state
+Best-path compares integers, so a path with no MED must be assigned one
+before it can be compared. Only the value differs:
+
+| Setting | Missing MED becomes | Effect (lower wins) |
+|---|---|---|
+| Default | `0` | Missing MED **wins** |
+| `bgp bestpath med missing-as-worst` | `4294967295` | Missing MED **loses** |
+
+- **Why flip it:** if policy says every prefix must carry an explicit MED,
+  then a MED-less route means something upstream is broken. Under the
+  default that broken route becomes *preferred* — the failure mode rewards
+  the mistake. `missing-as-worst` makes it lose instead.
+- **MED is only compared between paths from the same neighbouring AS.**
+  Different ASNs and the step is skipped entirely, moving on to the next
+  tiebreaker. `bgp always-compare-med` removes that guard and can make
+  best-path non-deterministic — the winner varies with arrival order.
+- **Lower MED wins**, inverting from weight and local preference where
+  higher wins. That flip mid-algorithm is the reliable source of wrong answers.
+- IOS XE advertises MED 0 to iBGP peers for eBGP routes that arrived
+  without one, so the 0 you see downstream may have been synthesised locally.
+
 ## Config Patterns
 ```ios-xe
 ! --- Distribute list filtering (extended ACL: source=network, dest=mask) ---
@@ -253,6 +275,12 @@ router bgp 65000
 
 ! Restrict which components build the aggregate's AS_SET / communities
  aggregate-address 172.16.0.0 255.255.0.0 as-set advertise-map PICK-CONTRIBUTORS
+
+! --- MED: treat a missing MED as worst instead of 0 ---
+router bgp 65100
+ bgp bestpath med missing-as-worst
+! --- Compare MED across different ASNs (guard removed -- use deliberately) ---
+ bgp always-compare-med
 ```
 
 ## Design Baseline
@@ -369,5 +397,10 @@ A deviation from this table is a question ("is this intentional here?"), never a
   outside the AS, so neither affects an external peer's incoming decision.
 - Comparing MED between paths from different ASNs and expecting it to be
   a deciding factor — it's only meaningful within paths from the same AS.
+- **Reading a missing MED as "no preference"** — by default it is compared
+  as `0`, which makes it the *most* preferred path, not a neutral one.
+- **Enabling `bgp always-compare-med` to "make MED work"** — it removes the
+  same-AS guard and can yield a different best path depending on the order
+  routes arrived, which is not reproducible across reloads.
 - Forgetting that a neighbor cannot have both a distribute list and a
   prefix list applied in the same direction at the same time.
