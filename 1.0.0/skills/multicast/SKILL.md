@@ -44,6 +44,29 @@ receivers are.
   each byte least-significant-bit first, so the I/G bit is literally the
   first bit on the wire** — a NIC can tell "is this for a group?" before the
   other 47 bits arrive.
+- ⚠️ **"Last bit of the FIRST byte" — not the last byte.** This is the most
+  common way to misread it. The I/G bit is **bit 8 of the 48**, near the
+  front of the address, not bit 48 at the end:
+
+```
+MAC:   01  :  00  :  5E  :  7F  :  01  :  01
+       ^^                                ^^
+    byte 1                            byte 6
+
+byte 1 = 01 = 0000 000[1]   <- I/G bit, bit 8 of 48
+byte 6 = 01 = 0000 000[1]   <- bit 48, no special meaning at all
+```
+
+  **"Least significant" is always scoped to something** — here it means
+  least significant *within byte 1*, so you look at that one byte and take
+  its rightmost bit. Same scope discipline as the "low-order" trap above.
+  **The odd/even shortcut therefore only ever applies to the first byte** —
+  the last byte's value is irrelevant to unicast-vs-group.
+- **Why bit 8 and not bit 48:** Ethernet sends bytes in order (byte 1 first)
+  and sends the bits *within* each byte least-significant-first. Those two
+  rules together put the I/G bit **first on the wire**. Had it been placed at
+  the end of the last byte, every NIC would have to buffer all 48 bits before
+  it could tell whether the frame was even addressed to a group.
 - **U/L bit (universal/local)** is its neighbour, the *second* least
   significant bit of byte 1: `0` = globally unique OUI-assigned (burned in),
   `1` = locally administered. **This is the bit that flips when a MAC is
