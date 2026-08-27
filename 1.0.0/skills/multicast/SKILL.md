@@ -141,6 +141,62 @@ byte 6 = 01 = 0000 000[1]   <- bit 48, no special meaning at all
   traffic arrives, by pruning the RPT path with an (S,G) prune to the RP.
   This switchover happens even if RPT and SPT paths are identical. Can be
   disabled per-group.
+- 🔑 **How the LHR ever learns a source — the keystone most texts skip.** The
+  `(*,G)` join cannot name a source, because the receiver does not know one.
+  **The LHR learns S from the DATA PLANE, not from PIM:** the multicast
+  packets arriving down the shared tree are ordinary IP packets, and every
+  one carries a source address in its header. First packet arrives → LHR
+  reads `src=10.1.1.1` → it can now send an `(S,G)` join. **The asterisk
+  describes the join, never the traffic.**
+- **Therefore the RPT is a bootstrap, not a path.** The RP's entire job is
+  **source discovery** — it exists because receivers do not know sources.
+  The moment the first packet lands at the LHR, discovery has *succeeded*
+  and the RP's job is done. **That is why the SPT switchover exists at all.**
+  ✅ **The proof is PIM-SSM:** IGMPv3 lets the receiver name the source, so
+  discovery is unnecessary — and SSM has no RP, no shared tree and no
+  Register process. Remove the discovery problem and the RP disappears.
+- **"Why bother with the SPT if PIM-SM is built around the RP?"** Because the
+  point of sparse mode is **not** the shared tree — it is **explicit join
+  only, i.e. do not flood**. Explicit join needs a *known root*; a receiver
+  knows no source; so it joins a known root (the RP) as scaffolding.
+  **RPT solves discovery; SPT solves delivery.** The decisive argument is
+  the third one below:
+  1. **Path** — RPT is source→RP→receiver, SPT is source→receiver; via an
+     intermediate can never be shorter, at best equal.
+  2. **Latency** — the real workloads are live video, voice, market data.
+  3. 🚨 **RP as bottleneck** — if every flow stayed on the RPT permanently,
+     **all multicast in the domain would funnel through one router**, making
+     the RP a data-plane chokepoint and single point of failure, not just a
+     control-plane one. **The switchover is what keeps the RP a control-plane
+     device.**
+  **Cost shape:** PIM-SM front-loads signalling **once per source** to buy a
+  near-zero steady state; PIM-DM is cheap to start and then **re-floods the
+  whole domain every 3 minutes forever.**
+- **The switchover is a TRIGGER, not a comparison.** With `spt-threshold 0`
+  the LHR does not evaluate "is the SPT better?" — it switches on the single
+  event *"a packet arrived from a source I did not know."* It cannot cheaply
+  determine that the trees are identical, so it always switches. When the RP
+  already sits on the natural path you therefore pay full `(S,G)` state cost
+  on every router along the way **for zero path benefit**. ⚙️ **Design
+  consequence: RP placement and `spt-threshold` interact — disable switchover
+  precisely when you have placed the RP *well*,** because a well-placed RP
+  leaves the SPT nothing to improve.
+- ⚠️ **A DR is a PER-SEGMENT ROLE, not a position on a tree.** It is elected
+  on every multi-access segment to be the **single** router that acts there,
+  preventing duplicate joins (receiver side) and duplicate Registers (source
+  side) when two PIM routers share a LAN. **Proof it is not tree-bound: the
+  same DR sends the `(*,G)` join and later the `(S,G)` join** — it is the
+  router that performs the switchover. On a point-to-point link the election
+  still runs but is meaningless; there is no duplication to prevent.
+  **FHR/LHR are positions; DR is an elected role.** They usually coincide.
+- 🚨 **Two OSPF-shaped traps in the PIM DR:** PIM has **no BDR**, and PIM DR
+  election **IS preemptive** — a higher-priority router takes over, where
+  OSPF's DR is sticky. Tiebreak is highest **IP**, not RID.
+- **DR vs Assert winner — two elections, different planes:** the **DR** is
+  proactive and decides who sends **control** messages (joins, registers);
+  the **Assert winner** is reactive, fires only when duplicate data actually
+  appears on a segment, and decides who **forwards data**. **They can be
+  different routers on the same segment.**
 - **Designated Router (DR) election:** on multi-access PIM-SM segments,
   highest DR priority (default 1 on all routers) wins, tiebreak by highest
   IP. FHR-side DR encapsulates register messages; LHR-side DR sends PIM
