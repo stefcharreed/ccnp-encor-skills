@@ -215,6 +215,34 @@ byte 6 = 01 = 0000 000[1]   <- bit 48, no special meaning at all
   ✅ **BSR is immune** — Bootstrap messages go to **224.0.0.13**, link-local
   (TTL 1), flooded hop-by-hop router to router. It never needs an RP to
   propagate itself. **This is the strongest practical argument for BSR.**
+- 🔑 **The mechanism, if the chicken-and-egg still feels hand-wavy — it is
+  FORWARDED vs REGENERATED.** Sending *to* a multicast address does not by
+  itself require multicast *routing*.
+  **Auto-RP asks the network to CARRY its message.** `224.0.1.40` is
+  routable, so for it to reach a router three hops away, the routers between
+  must answer *"this arrived on interface A, do I replicate it out B?"* —
+  **that question is multicast forwarding, and in sparse mode answering it
+  needs the RP.** Which is what the message contains. Loop.
+  **BSR never forwards anything.** R1 puts a BSM on its wire; the neighbour
+  hears it — one hop, no decision. That neighbour then **builds a brand-new
+  message of its own** and puts it on its own wires. Hop by hop, each router
+  originating fresh. **No router ever asks "where do I forward this,"** so no
+  routing state and no RP is ever consulted.
+  ⚙️ **What enforces it is arithmetic, not policy: TTL 1.** A router
+  decrements TTL when forwarding, so a `224.0.0.x` packet cannot survive a
+  hop. Regenerating is the *only* option — which is exactly why the whole
+  `224.0.0.0/24` family (OSPF hellos, EIGRP hellos, VRRP, IGMPv3) works this
+  way. **Link-local = Layer 3 addressing with Layer 2 scope.** It is still a
+  real IP packet (protocol 103), not a bare frame like a BPDU — but its reach
+  is one segment, which is why it *feels* like L2 behaviour.
+  🎯 **Punchline: the entire Auto-RP/BSR bootstrap difference reduces to
+  which multicast range each protocol chose.** Auto-RP picked `224.0.1.x`
+  (routable) and inherited the loop; BSR picked `224.0.0.13` (link-local) and
+  stepped around it. One address decision, everything else follows.
+  🔎 **Observable tell:** Auto-RP builds real mroute state — you will see
+  `(*, 224.0.1.39)` and `(*, 224.0.1.40)` in `show ip mroute`. **BSR leaves no
+  trace in the mroute table at all**, because it never asked the router to
+  forward anything.
 - ⚠️ **Priority direction INVERTS inside BSR — classic exam bait:**
 
 | Election | Winner |
