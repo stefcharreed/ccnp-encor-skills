@@ -197,6 +197,40 @@ byte 6 = 01 = 0000 000[1]   <- bit 48, no special meaning at all
   the **Assert winner** is reactive, fires only when duplicate data actually
   appears on a segment, and decides who **forwards data**. **They can be
   different routers on the same segment.**
+- 🔑 **Auto-RP vs BSR in one line: Auto-RP distributes an ANSWER; BSR
+  distributes the CANDIDATES and every router computes the answer itself.**
+  Auto-RP's Mapping Agent is an *authority* that resolves conflicts and
+  publishes a verdict. BSR has no authority over the choice — identical
+  RP-set plus identical deterministic hash on every router means they all
+  reach the same conclusion independently. **Stateless agreement vs a
+  published verdict.**
+- 🚨 **Auto-RP has a chicken-and-egg problem; BSR does not.** Auto-RP's own
+  announcements are multicast (224.0.1.39/.40), but forwarding sparse-mode
+  multicast requires already knowing the RP. Two ways out:
+  **`ip pim autorp listener`** — floods **only** .39/.40 dense while every
+  other group stays sparse. **This is the correct answer.**
+  **`ip pim sparse-dense-mode`** — older and hazardous: the dense fallback is
+  **not scoped to Auto-RP**, so *any* group without an RP mapping floods the
+  domain. One misconfiguration becomes a flood.
+  ✅ **BSR is immune** — Bootstrap messages go to **224.0.0.13**, link-local
+  (TTL 1), flooded hop-by-hop router to router. It never needs an RP to
+  propagate itself. **This is the strongest practical argument for BSR.**
+- ⚠️ **Priority direction INVERTS inside BSR — classic exam bait:**
+
+| Election | Winner |
+|---|---|
+| **BSR election** (which router becomes BSR) | **Highest** priority |
+| **C-RP selection** (which RP serves a group) | **Lowest** priority (like AD) |
+| **Auto-RP conflict** | Priority unused — **highest IP** |
+
+- **Hash mask length controls granularity, not preference.** A *longer* mask
+  spreads consecutive groups across more RPs; a *shorter* mask clumps them
+  onto fewer. Order of evaluation: **C-RP priority first (lower wins), then
+  hash value (highest wins), then highest IP.**
+- **Static RP beats both — but only with `override`.** By default a
+  dynamically learned mapping (Auto-RP or BSR) **wins over** a static
+  `ip pim rp-address`; adding `override` flips that precedence. Worth knowing
+  before you "fix" a mapping with a static entry and watch it be ignored.
 - **Designated Router (DR) election:** on multi-access PIM-SM segments,
   highest DR priority (default 1 on all routers) wins, tiebreak by highest
   IP. FHR-side DR encapsulates register messages; LHR-side DR sends PIM
