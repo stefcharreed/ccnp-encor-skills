@@ -71,7 +71,8 @@ Tracking progress against the six domains in Cisco's ENCOR (350-401) blueprint.
 - [ ] Not yet started
 
 ### 2. Virtualization (10%)
-- [ ] Not yet started
+- [x] [Overlay Tunnels](1.0.0/skills/overlay-tunnels/SKILL.md) — GRE, IPsec (AH/ESP, IKEv1/IKEv2), GRE over IPsec & VTI, LISP, VXLAN
+- [ ] Device virtualization (VRF, hypervisors, virtual switching)
 
 ### 3. Infrastructure (30%)
 - [x] [VLANs](1.0.0/skills/VLANS/SKILL.md) — 802.1Q, access/trunk ports, native/allowed VLANs
