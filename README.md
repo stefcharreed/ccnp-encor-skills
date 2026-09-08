@@ -91,8 +91,8 @@ Tracking progress against the six domains in Cisco's ENCOR (350-401) blueprint.
 - [x] [Advanced BGP](1.0.0/skills/bgp-advanced/SKILL.md) — multihoming, transit AS avoidance, route maps, AS_Path filtering, BGP communities, best-path selection
 - [x] [Multicast](1.0.0/skills/multicast/SKILL.md) — IGMP, IGMP snooping, PIM dense/sparse mode, RPF, rendezvous points, Auto-RP, BSR
 - [x] [Quality of Service (QoS)](1.0.0/skills/qos/SKILL.md) — DiffServ/IntServ, DSCP & PHBs, MQC, trust boundary, policing/shaping, token buckets, srTCM/trTCM, CBWFQ/LLQ, WRED
-- [ ] FHRP (HSRP/VRRP/GLBP)
-- [ ] IP Services (DHCP, NAT, NTP)
+- [x] [IP Services](1.0.0/skills/ip-services/SKILL.md) — NTP stratums & peers, PTP/IEEE 1588, FHRP (HSRP/VRRP/GLBP), object tracking, NAT/PAT
+- [ ] DHCP
 - [ ] Wireless architecture (autonomous, centralized, cloud-based, embedded)
 
 ### 4. Network Assurance (10%)
