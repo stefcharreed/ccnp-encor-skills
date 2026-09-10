@@ -96,6 +96,8 @@ Tracking progress against the six domains in Cisco's ENCOR (350-401) blueprint.
 - [ ] DHCP
 - [x] [Wireless Signals & Modulation](1.0.0/skills/wireless-signals-and-modulation/SKILL.md) — RF fundamentals, dB/dBm/EIRP, free space path loss, RSSI/SNR, modulation, MIMO, DRS
 - [x] [Wireless Infrastructure](1.0.0/skills/wireless-infrastructure/SKILL.md) — autonomous/centralized/cloud/distributed/EWC deployments, AP modes, CAPWAP discovery & join, profiles and tags, antennas
+- [x] [Wireless Roaming & Location Services](1.0.0/skills/wireless-roaming-and-location-services/SKILL.md) — intra/intercontroller roaming, Layer 2 vs Layer 3 roams, anchor/foreign controllers, mobility groups & domains, RSS trilateration, RF fingerprinting
+- [x] [Troubleshooting Wireless Connectivity](1.0.0/skills/wireless-troubleshooting/SKILL.md) — scoping by report pattern, Client 360 View, Radioactive Trace, AP join statistics, channel utilization, AP operational config
 
 ### 4. Network Assurance (10%)
 - [ ] SNMP
@@ -104,6 +106,7 @@ Tracking progress against the six domains in Cisco's ENCOR (350-401) blueprint.
 - [ ] IP SLA
 
 ### 5. Security (20%)
+- [x] [Authenticating Wireless Clients](1.0.0/skills/wireless-client-authentication/SKILL.md) — Open Auth, PSK/WPA personal, WPA3 SAE, EAP & 802.1x roles, four-way EAPOL handshake, key hierarchy, WebAuth (LWA/CWA)
 - [ ] ACLs
 - [ ] First-hop security (port security, DHCP snooping, DAI)
 - [ ] AAA / device access
