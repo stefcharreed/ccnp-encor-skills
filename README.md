@@ -95,7 +95,7 @@ Tracking progress against the six domains in Cisco's ENCOR (350-401) blueprint.
 - [x] [IP Services](1.0.0/skills/ip-services/SKILL.md) — NTP stratums & peers, PTP/IEEE 1588, FHRP (HSRP/VRRP/GLBP), object tracking, NAT/PAT
 - [ ] DHCP
 - [x] [Wireless Signals & Modulation](1.0.0/skills/wireless-signals-and-modulation/SKILL.md) — RF fundamentals, dB/dBm/EIRP, free space path loss, RSSI/SNR, modulation, MIMO, DRS
-- [ ] Wireless architecture (autonomous, centralized, cloud-based, embedded)
+- [x] [Wireless Infrastructure](1.0.0/skills/wireless-infrastructure/SKILL.md) — autonomous/centralized/cloud/distributed/EWC deployments, AP modes, CAPWAP discovery & join, profiles and tags, antennas
 
 ### 4. Network Assurance (10%)
 - [ ] SNMP
