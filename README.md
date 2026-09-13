@@ -68,7 +68,7 @@ This is exactly what working in public is for — thanks to both.
 Tracking progress against the six domains in Cisco's ENCOR (350-401) blueprint.
 
 ### 1. Architecture (15%)
-- [ ] Not yet started
+- [x] [Enterprise Network Architecture](1.0.0/skills/enterprise-network-architecture/SKILL.md) — hierarchical LAN design (access/distribution/core), network blocks & PINs, HA design, SSO/NSF with GR and NSR, two-tier vs three-tier, Layer 2 vs routed access, simplified campus design (VSS/SWV/StackWise)
 
 ### 2. Virtualization (10%)
 - [x] [Overlay Tunnels](1.0.0/skills/overlay-tunnels/SKILL.md) — GRE, IPsec (AH/ESP, IKEv1/IKEv2), GRE over IPsec & VTI, LISP, VXLAN
