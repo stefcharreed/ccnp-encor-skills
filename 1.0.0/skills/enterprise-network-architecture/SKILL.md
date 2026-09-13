@@ -552,3 +552,52 @@ this intentional here?" — never automatically a finding.*
   VSS, and StackWise Virtual are.
 - All FHRP-based redundancy needs its **default timers tuned** for sub-second
   convergence, and that tuning costs switch CPU — it is a tradeoff, not free.
+
+## Exam Preparation Tasks
+
+### Key topics coverage map
+
+Table 22-2, mapped to where each element actually lives in this skill. Note that the three
+layer sections (access, distribution, core) are each covered twice on purpose — narratively
+in Key Concepts and structurally in the layer-roles table — because the exam asks about them
+both ways.
+
+| Key topic element | Description | Page | Where it lives in this skill |
+|---|---|---|---|
+| List | Hierarchical LAN design layers | 624 | Key Concepts → "The hierarchical LAN design model"; Reference Tables → "Hierarchical layer roles" |
+| Section | Access Layer | 625 | Key Concepts → "Access layer"; Reference Tables → "Hierarchical layer roles" (row 1); Design Baseline rows on QoS trust boundary and redundant supervisors |
+| Section | Distribution Layer | 627 | Key Concepts → "Distribution layer"; Reference Tables → "Hierarchical layer roles" (row 2); Design Baseline rows on switch pairs and summarization |
+| Section | Core Layer | 628 | Key Concepts → "Core layer"; Reference Tables → "Hierarchical layer roles" (row 3) and "Network blocks reached from the core"; Design Baseline row on the three-distribution threshold |
+| List | High availability technologies | 630 | Key Concepts → "Why RP redundancy needs help from the control plane" (the four supported combinations); Reference Tables → "High availability technologies" |
+| Section | SSO and NSF | 630 | Key Concepts → "SSO and NSF"; Procedure → "RP switchover with SSO/NSF only"; three Common Pitfalls bullets |
+| Section | SSO/NSF with GR | 631 | Key Concepts → "SSO/NSF with GR"; Procedure → "RP switchover with SSO/NSF + GR" |
+| List | GR routers | 631 | Reference Tables → "Graceful Restart router categories" (one table satisfying the whole list, including the "NSF-aware" misnomer) |
+| Section | SSO/NSF with NSR | 631 | Key Concepts → "SSO/NSF with NSR"; Procedure → "RP switchover with SSO/NSF + NSR" |
+| Section | SSO/NSF with NSR and GR | 631 | Key Concepts → "SSO/NSF with NSR and GR"; Design Baseline row on GR-for-GR-aware / NSR-for-GR-unaware |
+
+No gaps — every row in Table 22-2 maps to content in this skill.
+
+One key topic is **under-weighted by the table relative to the quiz**: the architecture
+options (two-tier, three-tier, Layer 2 access, routed access, simplified campus, SD-Access,
+pages 632–640) carry no Key Topic icon at all, yet questions 6, 7, and 8 — three of eight —
+come straight from them. Do not let the Key Topics table set your study weighting for this
+chapter.
+
+### "Do I Know This Already?" question analysis
+
+| Q | What it's really testing | Answer | Pitfall the distractors expose |
+|---|---|---|---|
+| 1 | Whether you can state the *benefits* of hierarchical design — and, more sharply, where the model stops applying | **A, B, C, D, F** — easier troubleshooting, highly scalable, simplified design, improved performance, faster problem isolation | The whole question turns on the one option you must **not** pick: **E, "best design for modern data centers."** Modern DC traffic is east–west and belongs to **leaf–spine**; hierarchical design suits north–south. A "choose all that apply" where four options are giveaways and one is the entire test |
+| 2 | Terminology precision for the access layer | **D** — network edge | **"Aggregation layer" is the trap**: it is a real term, but it names the **distribution** layer. "Endpoint layer" and "end-user layer" are inventions that sound right because the access layer is where endpoints and end users attach. Tests naming, not concept |
+| 3 | A hard numeric limit in the design model | **B** — Two | Pure recall with one plausible pull: "No limit" feels right if you are thinking of the *core* (which aggregates many distributions) rather than a **building block** (which holds exactly two distribution switches). The trap is scope, not arithmetic |
+| 4 | Whether you know NSF is not independently configurable | **B — False** | NSF is **enabled when SSO is enabled** — it is not a separate feature. Anyone who has typed `nsf` under a routing protocol will believe they configured NSF and answer True. They configured **Graceful Restart**. This is the single most useful misconception in the chapter, and it is also a Common Pitfalls bullet |
+| 5 | Which HA mechanism is **external** — the one that talks to neighbors | **C** — Graceful Restart (GR) | Tests the internal/external split. SSO/NSF and NSR are internal and need nothing from the neighbor; only GR uses **routing protocol extensions** and requires a GR-aware peer. **"RNS" is an invented term** — letters shuffled from NSR, there purely to catch guessing |
+| 6 | The correct name for the collapsed core design | **C** — Two-tier design | **"Simplified campus design" is the trap**, and it is a good one: it is a *real* option in this very chapter, but it means **VSS / StackWise Virtual / StackWise clustering**, not collapsing the core into distribution. Two real terms, one question, easy to swap |
+| 7 | Which network blocks reach cloud providers — and why there are two | **A, B** — WAN edge and Internet edge | The trap is picking only one. The split is by **connection type**: **dedicated interconnections** to AWS/Azure/GCP ride the **WAN edge**; cloud access **not** requiring a dedicated interconnect rides the **Internet edge**. "Data center" is offered because cloud feels data-center-adjacent |
+| 8 | Which technologies actually implement a simplified campus design | **A, B, C, D** — clustering, stacking, VSS, StackWise Virtual | **"Daisy-chaining" is the excluded option** — a real cabling practice that produces none of the single-logical-switch behavior the design depends on. Tests whether you understand simplified campus design means *one logical switch*, not *fewer cables* |
+
+**Pattern across the quiz:** five of eight questions are built on **real-term substitution** —
+aggregation layer for distribution, simplified campus design for collapsed core, leaf–spine
+for hierarchical, daisy-chaining for stacking, RNS for NSR. The chapter's vocabulary is
+dense and the terms are close neighbors, so the defense is knowing which *layer* or which
+*design option* each term belongs to, not recognizing the term in isolation.
