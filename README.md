@@ -51,6 +51,27 @@ people with real production scar tissue:
 
 This is exactly what working in public is for — thanks to both.
 
+## Design update (2026-09-13) — Exam Preparation Tasks
+
+Topic skills built from OCG chapters now carry an **Exam Preparation Tasks**
+section with two parts:
+
+- **Key topics coverage map** — the chapter's own "Key Topics" table reproduced
+  with a fourth column pointing at where in the skill each element is covered.
+  The mapping is deliberately not 1:1: one table or bullet often satisfies
+  several key topics, and one key topic can be split across sections. A row
+  that can't be mapped is marked `gap`, so the map doubles as a coverage audit
+  of the skill itself.
+- **"Do I Know This Already?" question analysis** — for each quiz question,
+  what it's actually testing underneath the wording and which misconception the
+  distractors were built to catch. The valuable ones are distractors naming a
+  real technology that belongs to a *different* solution (EVPN/MP-BGP offered
+  as an SD-Access control plane; "aggregation layer" offered for the access
+  layer); those get promoted to Common Pitfalls too.
+
+Older skills in this catalog predate the section and don't carry it yet — it
+gets added as each chapter's source material is revisited.
+
 ## How it works
 
 - `/ccnp-note <topic>` (a Claude Code skill) takes raw study notes, textbook excerpts,
@@ -59,7 +80,7 @@ This is exactly what working in public is for — thanks to both.
 - Every skill follows the same template: Purpose, Key Concepts, Config Patterns,
   Design Baseline (best practices with sources — and legitimate reasons to
   deviate), Verification Commands, Intent Questions, Troubleshooting Checklist
-  (step 0: intent vs. observed), Common Pitfalls.
+  (step 0: intent vs. observed), Common Pitfalls, and Exam Preparation Tasks.
 - Every new or updated skill is committed and pushed immediately — see
   [CLAUDE.md](CLAUDE.md) for the repo's working rules.
 
@@ -69,6 +90,7 @@ Tracking progress against the six domains in Cisco's ENCOR (350-401) blueprint.
 
 ### 1. Architecture (15%)
 - [x] [Enterprise Network Architecture](1.0.0/skills/enterprise-network-architecture/SKILL.md) — hierarchical LAN design (access/distribution/core), network blocks & PINs, HA design, SSO/NSF with GR and NSR, two-tier vs three-tier, Layer 2 vs routed access, simplified campus design (VSS/SWV/StackWise)
+- [x] [Fabric Technologies](1.0.0/skills/fabric-technologies/SKILL.md) — SD-Access (LISP control plane, VXLAN-GPO data plane, TrustSec policy plane, fabric roles, DNA Center layers & workflows) and SD-WAN (vManage/vSmart/vBond/edge, OMP, AAR, Cloud OnRamp)
 
 ### 2. Virtualization (10%)
 - [x] [Overlay Tunnels](1.0.0/skills/overlay-tunnels/SKILL.md) — GRE, IPsec (AH/ESP, IKEv1/IKEv2), GRE over IPsec & VTI, LISP, VXLAN

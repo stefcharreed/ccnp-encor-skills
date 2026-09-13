@@ -118,6 +118,49 @@ intent vs. observed comes before any show command.>
 ## Common Pitfalls
 - <thing that trips people up>
 - <another>
+
+## Exam Preparation Tasks
+<Only include this section if the source material carries the OCG's end-of-chapter
+"Exam Preparation Tasks" apparatus — a Key Topics table and/or a "Do I Know This
+Already?" quiz. Omit whichever of the two subsections the source lacks.>
+
+### Key topics coverage map
+<Reproduce the chapter's "Key Topics for Chapter N" table verbatim (element type,
+description, page) and add a fourth column pointing at where in THIS skill each key
+topic is actually covered — by section name and, where useful, the specific bullet
+or table.
+
+The mapping is deliberately not 1:1. One bullet or table row in this skill can
+satisfy several key topics at once, and one key topic can be split across Key
+Concepts, a Reference Table, and Common Pitfalls. Say which it is instead of
+forcing a clean pairing. If a key topic is thin or missing in this skill, write
+"gap" in that column rather than papering over it — the map doubles as a coverage
+audit.>
+
+| Key topic element | Description | Page | Where it lives in this skill |
+|---|---|---|---|
+| <List / Section / Figure / Table> | <description from the OCG table> | <page> | <section name in this skill, or "gap"> |
+
+### "Do I Know This Already?" question analysis
+<For every quiz question in the source, three things: what the question is *actually*
+testing underneath its wording, the correct answer, and which pitfall the distractors
+are built to expose.
+
+Be specific about distractor design. The useful cases are:
+- a distractor naming a real technology that belongs somewhere else (a genuine
+  real-world confusion worth its own Common Pitfalls bullet);
+- a distractor that is true of a *related* protocol but not this one;
+- a distractor that is half-right — correct mechanism, wrong set of devices;
+- an invented term that sounds plausible next to real ones.
+
+A question that is pure recall with no trap should say so plainly — don't
+manufacture a pitfall that isn't there. Where a question's trap is genuinely
+important, it should also appear as a bullet in Common Pitfalls; note that
+cross-reference here.>
+
+| Q | What it's really testing | Answer | Pitfall the distractors expose |
+|---|---|---|---|
+| <n> | <underlying concept, not the surface wording> | <letter(s) + short text> | <the trap, or "none — straight recall"> |
 ```
 
 ### Step 3 — Update the README roadmap
@@ -181,3 +224,17 @@ After writing and pushing, tell the user:
   real markdown table in the Reference Tables section instead of flattening
   it into prose bullets — the row/column structure carries information that
   prose loses
+- If the source material includes the OCG's end-of-chapter apparatus, the Exam
+  Preparation Tasks section is required, not optional. The Key Topics table is
+  Cisco telling you exactly what it considers testable — reproduce it and map
+  every row to where this skill covers it. A row you cannot map is a real gap
+  in the skill; mark it "gap" and say so in the confirmation rather than
+  quietly dropping the row
+- The quiz analysis is not an answer key. The value is in naming what each
+  question is testing underneath its wording and which misconception the
+  distractors were designed to catch. Distractors that name a real technology
+  belonging to a different solution (e.g. an EVPN/MP-BGP option offered as an
+  SD-Access control plane) are the highest-value ones — promote those to a
+  Common Pitfalls bullet as well
+- Never invent a trap that isn't there. A pure-recall question should be
+  labeled as such
