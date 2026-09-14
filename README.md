@@ -122,10 +122,7 @@ Tracking progress against the six domains in Cisco's ENCOR (350-401) blueprint.
 - [x] [Troubleshooting Wireless Connectivity](1.0.0/skills/wireless-troubleshooting/SKILL.md) — scoping by report pattern, Client 360 View, Radioactive Trace, AP join statistics, channel utilization, AP operational config
 
 ### 4. Network Assurance (10%)
-- [ ] SNMP
-- [ ] Syslog
-- [ ] NetFlow
-- [ ] IP SLA
+- [x] [Network Assurance](1.0.0/skills/network-assurance/SKILL.md) — ping/traceroute/debug discipline, SNMP (MIB structure, OIDs, communities, traps), syslog severities & destinations, NetFlow and Flexible NetFlow (records/exporters/monitors/samplers), SPAN/RSPAN/ERSPAN, IP SLA, Cisco DNA Center Assurance (Network Time Travel, Client 360, Path Trace)
 
 ### 5. Security (20%)
 - [x] [Authenticating Wireless Clients](1.0.0/skills/wireless-client-authentication/SKILL.md) — Open Auth, PSK/WPA personal, WPA3 SAE, EAP & 802.1x roles, four-way EAPOL handshake, key hierarchy, WebAuth (LWA/CWA)
