@@ -1,14 +1,21 @@
-# CCNP ENCOR Skills
+# CCNP Skills — ENCOR + ENARSI
 
-A personal CCNP ENCOR (350-401) knowledge base, captured as I study and structured as
-installable [Claude Code](https://claude.com/claude-code) skills rather than static notes.
+A personal CCNP knowledge base, captured as I study and structured as installable
+[Claude Code](https://claude.com/claude-code) skills rather than static notes.
+
+Two catalogs live here:
+
+| Catalog | Exam | Status | Path |
+|---|---|---|---|
+| **ENCOR** | 350-401 | **Complete** — all 6 domains, 32 topic skills, OCG Chapters 1–29 | `1.0.0/skills/` |
+| **ENARSI** | 300-410 | **In progress** — just started | `1.0.0/skills-enarsi/` |
 
 Each topic I study gets turned into a `SKILL.md` file — purpose, key concepts, real
 IOS-XE config patterns, verification commands, and an ordered troubleshooting
-checklist — generated live via a custom `/ccnp-note <topic>` slash command as I work
-through the material. The result is a knowledge base that's both human-readable and
-directly usable by an AI coding agent for config review, troubleshooting walkthroughs,
-or lab work.
+checklist — generated live via a custom `/ccnp-note <topic>` (ENCOR) or
+`/enarsi-note <topic>` (ENARSI) slash command as I work through the material. The result
+is a knowledge base that's both human-readable and directly usable by an AI coding agent
+for config review, troubleshooting walkthroughs, or lab work.
 
 I'm a network engineer (NOC tech → network engineer) moving deeper into network
 security and automation (NetDevOps). This repo is part of that work in public —
@@ -77,6 +84,11 @@ gets added as each chapter's source material is revisited.
 - `/ccnp-note <topic>` (a Claude Code skill) takes raw study notes, textbook excerpts,
   config blocks, or `show` command output and writes a structured skill file to
   `1.0.0/skills/<topic>/SKILL.md`.
+- `/enarsi-note <topic>` does the same for ENARSI, writing to
+  `1.0.0/skills-enarsi/<topic>/SKILL.md`. It deliberately reuses `ccnp-note`'s template by
+  reference rather than copying it, so the two catalogs can't drift apart — and it checks
+  for an existing ENCOR skill on the same protocol first, so ENARSI captures the delta
+  instead of silently duplicating.
 - Every skill follows the same template: Purpose, Key Concepts, Config Patterns,
   Design Baseline (best practices with sources — and legitimate reasons to
   deviate), Verification Commands, Intent Questions, Troubleshooting Checklist
@@ -86,7 +98,16 @@ gets added as each chapter's source material is revisited.
 
 ## Roadmap — ENCOR exam domains
 
-Tracking progress against the six domains in Cisco's ENCOR (350-401) blueprint.
+**Status: complete.** The full ENCOR (350-401) Official Cert Guide has been read and captured,
+Chapters 1–29 (Chapter 30 is Final Preparation — no technical content). All six blueprint
+domains below are covered by skills in this catalog.
+
+Two topics appear in Cisco's blueprint but have **no standalone OCG chapter**, so there is no
+chapter to capture them from — they are noted here rather than tracked as outstanding work:
+
+- **DHCP** — appears only incidentally in the OCG (PnP onboarding, ZBFW ACLs, CWA step 4).
+- **First-hop security (port security, DHCP snooping, DAI)** — CCNA/SWITCH-level material the
+  OCG assumes. Adding it would need a non-OCG source.
 
 ### 1. Architecture (15%)
 - [x] [Enterprise Network Architecture](1.0.0/skills/enterprise-network-architecture/SKILL.md) — hierarchical LAN design (access/distribution/core), network blocks & PINs, HA design, SSO/NSF with GR and NSR, two-tier vs three-tier, Layer 2 vs routed access, simplified campus design (VSS/SWV/StackWise)
@@ -115,7 +136,6 @@ Tracking progress against the six domains in Cisco's ENCOR (350-401) blueprint.
 - [x] [Multicast](1.0.0/skills/multicast/SKILL.md) — IGMP, IGMP snooping, PIM dense/sparse mode, RPF, rendezvous points, Auto-RP, BSR
 - [x] [Quality of Service (QoS)](1.0.0/skills/qos/SKILL.md) — DiffServ/IntServ, DSCP & PHBs, MQC, trust boundary, policing/shaping, token buckets, srTCM/trTCM, CBWFQ/LLQ, WRED
 - [x] [IP Services](1.0.0/skills/ip-services/SKILL.md) — NTP stratums & peers, PTP/IEEE 1588, FHRP (HSRP/VRRP/GLBP), object tracking, NAT/PAT
-- [ ] DHCP
 - [x] [Wireless Signals & Modulation](1.0.0/skills/wireless-signals-and-modulation/SKILL.md) — RF fundamentals, dB/dBm/EIRP, free space path loss, RSSI/SNR, modulation, MIMO, DRS
 - [x] [Wireless Infrastructure](1.0.0/skills/wireless-infrastructure/SKILL.md) — autonomous/centralized/cloud/distributed/EWC deployments, AP modes, CAPWAP discovery & join, profiles and tags, antennas
 - [x] [Wireless Roaming & Location Services](1.0.0/skills/wireless-roaming-and-location-services/SKILL.md) — intra/intercontroller roaming, Layer 2 vs Layer 3 roams, anchor/foreign controllers, mobility groups & domains, RSS trilateration, RF fingerprinting
@@ -128,20 +148,44 @@ Tracking progress against the six domains in Cisco's ENCOR (350-401) blueprint.
 - [x] [Authenticating Wireless Clients](1.0.0/skills/wireless-client-authentication/SKILL.md) — Open Auth, PSK/WPA personal, WPA3 SAE, EAP & 802.1x roles, four-way EAPOL handshake, key hierarchy, WebAuth (LWA/CWA)
 - [x] [Secure Network Access Control](1.0.0/skills/secure-network-access-control/SKILL.md) — Cisco SAFE (PINs, secure domains, attack continuum), the Cisco Secure portfolio (Talos, Secure Malware Analytics, AMP, Secure Client, Umbrella, WSA, ESA, Secure IPS/NGFW, Secure Network & Cloud Analytics, ISE/pxGrid), and NAC (802.1x/EAP methods, EAP chaining, MAB, LWA/CWA WebAuth, IBNS 2.0, TrustSec SGT/SXP/SGACL, MACsec)
 - [x] [Network Device Access Control & Infrastructure Security](1.0.0/skills/network-device-access-control/SKILL.md) — ACLs on interfaces & vty (`access-class`), CLI access methods, password types 0/5/7/8/9, privilege levels & RBAC, `transport input`, SSH v1/v2, EXEC & absolute timeouts, AAA framework, TACACS+ vs RADIUS, the 11-step TACACS+ device-access config, ZBFW (zones, self/default zones, drop/pass/inspect, zone pairs), CoPP, device hardening
-- [ ] First-hop security (port security, DHCP snooping, DAI) — not an OCG chapter; would need an outside source
 
 ### 6. Automation (15%)
 - [x] [Foundational Network Programmability](1.0.0/skills/network-programmability-foundations/SKILL.md) — CLI limits, APIs (Northbound/Southbound, REST, HTTP methods & CRUD, status codes), XML vs JSON, Postman, Cisco DNA Center & vManage APIs (Token API, X-Auth-Token, JSESSIONID, limit/offset), data models (YANG, NETCONF, RESTCONF), DevNet, GitHub, and basic Python (modules, dictionaries, functions, conditions)
 - [x] [Automation Tools](1.0.0/skills/automation-tools/SKILL.md) — on-box EEM (event detectors, applets, events/actions, Tcl scripts, email variables) and off-box config management: agent-based Puppet (modules/manifests, PuppetDB, Forge), Chef (cookbooks/recipes, knife, OHAI, kitchen) and SaltStack (masters/minions, pillars/grains, reactors/beacons, 0MQ); agentless Ansible (playbooks/plays/tasks, YAML, inventory, ansible-vault, PPDIOO), Puppet Bolt and Salt SSH
 
+## Roadmap — ENARSI exam domains
+
+**Status: just started.** Tracking against the four domains in Cisco's ENARSI (300-410)
+blueprint. Skills land in `1.0.0/skills-enarsi/`.
+
+ENARSI revisits several protocols ENCOR already covers — EIGRP, OSPF, BGP, ACLs, CoPP, AAA,
+SNMP, NetFlow, IP SLA, NETCONF/RESTCONF — at greater depth and with a troubleshooting rather
+than an implementation slant. Where that happens, the ENARSI skill captures **the delta** and
+cross-references the ENCOR skill for the fundamentals, rather than duplicating it.
+
+### 1. Layer 3 Technologies (35%)
+- [ ] Not yet started
+
+### 2. VPN Technologies (20%)
+- [ ] Not yet started
+
+### 3. Infrastructure Security (20%)
+- [ ] Not yet started
+
+### 4. Infrastructure Services (25%)
+- [ ] Not yet started
+
 ## Repo layout
 
 ```
 1.0.0/
-  package.json          plugin manifest
-  skills/
-    <topic>/SKILL.md     one structured skill per topic
-    ccnp-note/SKILL.md   the skill that generates new topic skills
+  package.json            plugin manifest (declares both skill directories)
+  skills/                 ENCOR 350-401 — complete
+    <topic>/SKILL.md        one structured skill per topic
+    ccnp-note/SKILL.md      generates new ENCOR topic skills (template source of truth)
+  skills-enarsi/          ENARSI 300-410 — in progress
+    <topic>/SKILL.md        one structured skill per topic
+    enarsi-note/SKILL.md    generates new ENARSI topic skills (reuses ccnp-note's template)
 ```
 
 ## License
