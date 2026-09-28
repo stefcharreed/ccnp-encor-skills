@@ -132,6 +132,7 @@ Tracking progress against the six domains in Cisco's ENCOR (350-401) blueprint.
 
 ### 6. Automation (15%)
 - [x] [Foundational Network Programmability](1.0.0/skills/network-programmability-foundations/SKILL.md) — CLI limits, APIs (Northbound/Southbound, REST, HTTP methods & CRUD, status codes), XML vs JSON, Postman, Cisco DNA Center & vManage APIs (Token API, X-Auth-Token, JSESSIONID, limit/offset), data models (YANG, NETCONF, RESTCONF), DevNet, GitHub, and basic Python (modules, dictionaries, functions, conditions)
+- [x] [Automation Tools](1.0.0/skills/automation-tools/SKILL.md) — on-box EEM (event detectors, applets, events/actions, Tcl scripts, email variables) and off-box config management: agent-based Puppet (modules/manifests, PuppetDB, Forge), Chef (cookbooks/recipes, knife, OHAI, kitchen) and SaltStack (masters/minions, pillars/grains, reactors/beacons, 0MQ); agentless Ansible (playbooks/plays/tasks, YAML, inventory, ansible-vault, PPDIOO), Puppet Bolt and Salt SSH
 
 ## Repo layout
 
