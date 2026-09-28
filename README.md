@@ -94,7 +94,7 @@ Tracking progress against the six domains in Cisco's ENCOR (350-401) blueprint.
 
 ### 2. Virtualization (10%)
 - [x] [Overlay Tunnels](1.0.0/skills/overlay-tunnels/SKILL.md) — GRE, IPsec (AH/ESP, IKEv1/IKEv2), GRE over IPsec & VTI, LISP, VXLAN
-- [ ] Device virtualization (VRF, hypervisors, virtual switching)
+- [x] [Virtualization](1.0.0/skills/virtualization/SKILL.md) — server virtualization (VMs, Type 1/2 hypervisors, containers & container engines, vSwitches and distributed switching, Docker0 bridging), the ETSI NFV framework (NFVI, VNF, VIM, EM, MANO, OSS/BSS, service chaining), VNF I/O performance (the 11-step OVS path, OVS-DPDK, PCI passthrough, SR-IOV with VFs/PFs and VEB/VEPA), and Cisco ENFV (DNA Center MANO, NFVIS, ENCS / Catalyst 8200 uCPE)
 
 ### 3. Infrastructure (30%)
 - [x] [VLANs](1.0.0/skills/VLANS/SKILL.md) — 802.1Q, access/trunk ports, native/allowed VLANs
