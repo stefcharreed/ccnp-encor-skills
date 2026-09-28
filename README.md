@@ -127,6 +127,7 @@ Tracking progress against the six domains in Cisco's ENCOR (350-401) blueprint.
 ### 5. Security (20%)
 - [x] [Authenticating Wireless Clients](1.0.0/skills/wireless-client-authentication/SKILL.md) — Open Auth, PSK/WPA personal, WPA3 SAE, EAP & 802.1x roles, four-way EAPOL handshake, key hierarchy, WebAuth (LWA/CWA)
 - [x] [Secure Network Access Control](1.0.0/skills/secure-network-access-control/SKILL.md) — Cisco SAFE (PINs, secure domains, attack continuum), the Cisco Secure portfolio (Talos, Secure Malware Analytics, AMP, Secure Client, Umbrella, WSA, ESA, Secure IPS/NGFW, Secure Network & Cloud Analytics, ISE/pxGrid), and NAC (802.1x/EAP methods, EAP chaining, MAB, LWA/CWA WebAuth, IBNS 2.0, TrustSec SGT/SXP/SGACL, MACsec)
+- [x] [Network Device Access Control & Infrastructure Security](1.0.0/skills/network-device-access-control/SKILL.md) — ACLs on interfaces & vty (`access-class`), CLI access methods, password types 0/5/7/8/9, privilege levels & RBAC, `transport input`, SSH v1/v2, EXEC & absolute timeouts, AAA framework, TACACS+ vs RADIUS, the 11-step TACACS+ device-access config, ZBFW (zones, self/default zones, drop/pass/inspect, zone pairs), CoPP, device hardening
 - [ ] ACLs
 - [ ] First-hop security (port security, DHCP snooping, DAI)
 - [ ] AAA / device access
