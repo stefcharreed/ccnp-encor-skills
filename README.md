@@ -131,7 +131,7 @@ Tracking progress against the six domains in Cisco's ENCOR (350-401) blueprint.
 - [ ] First-hop security (port security, DHCP snooping, DAI) — not an OCG chapter; would need an outside source
 
 ### 6. Automation (15%)
-- [ ] Not yet started
+- [x] [Foundational Network Programmability](1.0.0/skills/network-programmability-foundations/SKILL.md) — CLI limits, APIs (Northbound/Southbound, REST, HTTP methods & CRUD, status codes), XML vs JSON, Postman, Cisco DNA Center & vManage APIs (Token API, X-Auth-Token, JSESSIONID, limit/offset), data models (YANG, NETCONF, RESTCONF), DevNet, GitHub, and basic Python (modules, dictionaries, functions, conditions)
 
 ## Repo layout
 
