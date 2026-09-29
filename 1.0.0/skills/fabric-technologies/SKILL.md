@@ -19,6 +19,8 @@ description: >
   intermediate node, host pool, scalable group, anycast gateway, instance ID, VNID,
   802.1x, MAB, MAC Authentication Bypass, WebAuth, design policy provision assurance,
   SD-WAN, Cisco SD-WAN, Viptela, Meraki SD-WAN, vManage, vSmart, vBond, vAnalytics,
+  Catalyst SD-WAN, Catalyst SD-WAN Validator, Controller, Manager, Edge, SD-WAN Manager,
+  public IP address,
   vEdge, cEdge, SD-WAN edge device, OMP, Overlay Management Protocol, DTLS tunnel,
   STUN, NAT detection, transport independent, single pane of glass,
   Cloud OnRamp, CoR, CoR for SaaS, CoR for IaaS, DIA site, gateway site, client site,
@@ -329,6 +331,18 @@ to a plane and a role instead of guessed at.
   communicate with the three controller personas across all of the underlay circuits is an
   important design topic.**
 
+**Catalyst SD-WAN naming (current Cisco names — the v1.2 blueprint uses these)**
+Cisco rebranded Viptela SD-WAN as **Cisco Catalyst SD-WAN**. Exams and Boson now use either
+name, so know both:
+
+| Current (Catalyst) name | Former (Viptela) name | Plane |
+|---|---|---|
+| **Validator** | vBond orchestrator | Orchestration |
+| **Controller** | vSmart controller | Control |
+| **Manager** (SD-WAN Manager) | vManage NMS | Management |
+| **Edge** | vEdge / cEdge (SD-WAN router) | Data |
+| **Analytics** | vAnalytics | Analytics (optional) |
+
 **vBond orchestrator**
 - A **virtualized vEdge running a dedicated function of the vBond persona**. Devices can
   locate the vBond through specific IP addresses or **FQDNs** — **FQDN is preferred**
@@ -341,6 +355,12 @@ to a plane and a role instead of guessed at.
 - **NAT detection** — detects when devices are placed behind NAT devices using **STUN
   (Session Traversal Utilities for NAT, RFC 5389)**. **Placing a vBond behind a NAT device
   is not recommended, but requires a 1:1 static NAT if it is.**
+- **The Validator (vBond) is the ONLY SD-WAN component that must have a publicly
+  routable IP address.** It is the first thing every Controller and Edge contacts when it
+  boots, and those devices are often behind NAT (firewalls, routers). A public address
+  means everyone can reach it. That is also why it can't sit behind ordinary NAT: a 1:1
+  static NAT effectively gives it that public address. Manager, Controller and Edge can all
+  sit behind NAT, and the Validator's STUN detection handles them.
 - **Load balancing** — provides load balancing of sessions to fabrics that have multiple
   vSmart or vManage controllers.
 - **Every vBond has a permanent control plane connection over a DTLS tunnel with every
@@ -362,6 +382,10 @@ to a plane and a role instead of guessed at.
   fabric.
 - Processes OMP routes learned from SD-WAN edge devices (or other vSmart controllers) and
   advertises reachability information learned from those routes to the edge devices.
+  It works like a **BGP route reflector**: Edges send OMP routes to the Controller, the
+  Controller reflects them to all Edges, and each Edge **redistributes them into its own
+  routing table** so forwarding decisions are made **locally** on the Edge. Validator and
+  Edge routers must each keep a DTLS connection to **at least one** Controller.
 - Implements all the **control plane policies** created on vManage: logical tunnel
   topologies (hub and spoke, regional, partial mesh), service chaining, traffic engineering,
   and segmentation per VPN topology. Example: a policy created on vManage for an application
@@ -852,6 +876,11 @@ chapter's own answer.*
 - **SD-WAN has exactly four mandatory components**: vManage, vSmart, vBond, and the SD-WAN
   routers. **vAnalytics is optional**, and **ISE and DNA Center are not SD-WAN components at
   all**.
+- **"Which component must have a public IP?" → Validator (vBond), and only the
+  Validator.** Controller (vSmart) is the common wrong pick. Everything else can be behind
+  NAT because it reaches out to the Validator, not the other way round.
+- **Old and new names in the same question.** Validator = vBond, Controller = vSmart,
+  Manager = vManage, Edge = vEdge/cEdge. Translate before answering.
 - **vSmart uses DTLS to edge devices for OMP — not IPsec.** IPsec runs **between SD-WAN
   routers** for data plane traffic. The permanent DTLS relationship is **vBond to every
   vSmart**.
