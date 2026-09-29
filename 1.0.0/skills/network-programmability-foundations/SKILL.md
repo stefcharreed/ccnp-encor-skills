@@ -329,6 +329,40 @@ script and know what it does.
   - **`custom`** — used when **a Cisco DNA Center is already installed** in a lab or another
     facility and needs to be accessed by the script.
 
+**Securing JSON with JSON Web Tokens (JWT):**
+- **JWT is an IETF open standard defined in RFC 7519.** Its purpose is **secure transmission
+  of JSON-formatted information between parties**. JWTs **can be encrypted** (confidentiality)
+  and **digitally signed** (integrity); a JWT **signed using PKI also provides
+  nonrepudiation**.
+- **A completed JWT is three parts separated by dots: `header.payload.signature`.** Each part
+  is **Base64URL-encoded** before the dots are added. **The dot delimiters carry no
+  information** — they are pure separators.
+- **Header — this is the component that defines the signing algorithm.** A JSON object with
+  the **token type** and the **algorithm used to sign the JWT**:
+  ```json
+  { "alg": "RS256", "typ": "JWT" }
+  ```
+- **Payload — a JSON object containing claims.** A claim carries information about the sender
+  and the information being transmitted. **Three types of claim:**
+  - **Registered** — predefined **three-character** names. **Not mandatory, but
+    recommended.** `exp` (expiration time), `iss` (issuer), `sub` (subject), `aud`
+    (audience).
+  - **Public** — defined at will by the JWT generator, but **RFC 7519 recommends registering
+    new names with IANA or using a Public Name** (a value unlikely to collide with others').
+    IANA-listed examples: `name`, `given_name`, `middle_name`, `nickname`, registered to the
+    OpenID Foundation Artifact Binding Working Group.
+  - **Private** — **custom-created by the generator, not registered with IANA**, so it
+    **risks colliding** with a claim already in use elsewhere.
+- **Signature — the product of signing, not the declaration of how.** It is built from the
+  Base64URL-encoded header and payload joined by a period, then signed with a **secret key**
+  using **the algorithm named in the header**:
+  ```
+  RSASHA256(base64UrlEncode(header) + "." + base64UrlEncode(payload), secret)
+  ```
+- **Exam framing:** asked which JWT component *defines* the signing algorithm, the answer is
+  the **header**. The signature merely *uses* that algorithm; the payload and the delimiter
+  are unrelated to it.
+
 ## Procedure
 
 **Authenticating to Cisco DNA Center with Postman (Token API), 7 steps:**
@@ -895,7 +929,17 @@ question for the operator, not automatically a finding.**
   **`JSESSIONID`**. This is the chapter's most reliably tested distinction (quiz Q4 and Q10 are
   the same fact from both sides).
 - **The DNA Center token is per-session and changes on every authentication.** Caching one in a
-  script and reusing it tomorrow produces a 401 that looks like a permissions change.
+  script and reusing it tomorrow produces a 401 that looks like a permissions change. (That
+  token is itself a JWT — its `exp` registered claim is readable without the secret, so a
+  script can check expiry instead of discovering it as a 401.)
+- **Picking the signature as "the component that defines the signing algorithm."** The
+  signature is what the algorithm *produces*; the **header** is where `alg` is declared. The
+  signing step reads the algorithm out of the header.
+- **Reading Base64URL encoding as encryption.** Header and payload are *encoded*, not
+  encrypted — anyone holding the token can decode and read every claim. Signing protects
+  integrity, not confidentiality. Never put a secret in a claim.
+- **Assuming registered claims are mandatory.** RFC 7519 makes `exp`, `iss`, `sub`, and `aud`
+  **recommended, not required** — a valid JWT can omit all of them.
 - **`limit` and `offset` mean different things.** `limit` = how many records; `offset` = which
   one to start from. `?limit=1&offset=2` means "one record, the second one" — not "two records."
 - **RESTCONF does not replace NETCONF.** The chapter calls this out as a **common
