@@ -3,7 +3,9 @@ name: ccnp-ip-routing-essentials
 description: >
   Use this skill when troubleshooting or configuring ip-routing-essentials on IOS-XE.
   Invoke when the user asks about: RIB, FIB, administrative distance, prefix
-  length, ECMP, unequal-cost load balancing, static route, floating static
+  length, ECMP, unequal-cost load balancing, CEF load balancing, CEF
+  load sharing, per-packet, per-destination, ip load-sharing, out-of-order
+  packets, static route, floating static
   route, null route, policy-based routing, VRF, ARP resolution, incomplete
   ARP entry, proxy ARP, local vs remote forwarding decision, ICMP
   destination host unreachable.
@@ -22,6 +24,24 @@ IP routing essentials cover how a router decides which path wins (prefix length,
 - Path selection happens in this priority order: **prefix length** (longest match always wins regardless of source) → **administrative distance** (lower AD wins when multiple sources offer the same prefix length) → **metric** (lower wins when AD ties, e.g. two sources from the same protocol).
 - The RIB only ever holds the *single best* route a routing process submits per prefix; if a lower-AD route is later removed, the RIB asks the other process(es) that lost the AD comparison to resubmit their route — meaning the lowest-AD route in absolute terms isn't always what gets submitted (e.g. BGP may submit an iBGP path at AD 200 instead of an available eBGP path at AD 20, because BGP's own best-path algorithm decided it first).
 - **ECMP** (equal-cost multipathing): when a protocol has multiple equal-metric paths and supports it, all are installed and traffic load-shares evenly. **Unequal-cost load balancing**: EIGRP-only, not default-enabled, installs multiple different-metric paths and ratios traffic proportional to each path's metric (lower metric gets more traffic share).
+- **⚠ CEF LOAD BALANCING — PER-DESTINATION vs PER-PACKET (high-yield exam trap).** Once
+  ECMP installs several paths, **CEF** decides how packets are spread across them. The
+  choice is set on the **outbound interface** (`ip load-sharing ...`).
+  - **Per-destination is the DEFAULT.** CEF hashes source + destination, so **every packet of
+    a given flow takes the same path**. Packets stay in order, so this is **safe for VoIP**.
+    Distribution is **statistical**: it only evens out across many flows, and one heavy flow
+    can load a single link.
+  - **Per-packet** round-robins **each packet** across the links, ignoring sessions and
+    sequence. Links load evenly, but packets of one flow take different paths and can
+    **arrive at the destination out of order**. For **VoIP** that means choppy, degraded
+    calls, and TCP sees duplicate ACKs and retransmits.
+  - **Where the reordering happens:** out of order **at the destination**, never at the
+    source. The balancing decision is made on the router after the packets have left the
+    sender and are in transit.
+  - **Exam answer pattern:** "per-packet + VoIP" → *quality could suffer because packets can
+    **arrive at their destination** out of order*. The distractors are "sent from the source
+    out of order" (wrong place), "improves because balanced over multiple links" (reordering
+    outweighs it), and "distributed statistically" (that's per-destination, not per-packet).
 - Static route types: **Directly attached** (`ip route <net> <mask> <interface>`) — only valid on point-to-point interfaces without ARP (e.g. serial); using it on an Ethernet/ARP-capable interface forces ARP for every destination matching the route and can cause instability. **Recursive** (`ip route <net> <mask> <next-hop-ip>`) — requires a second RIB lookup to resolve the next-hop IP to an interface; cannot resolve via a default route (0.0.0.0/0) entry. **Fully specified** (`ip route <net> <mask> <interface> <next-hop-ip>`) — both interface and next-hop IP given, avoids the recursive lookup and ARP issues, and the route is pulled from the RIB if the named interface goes down.
 - **Floating static routes** use a deliberately higher AD than the primary route so they only get installed as backup when the primary is withdrawn — common pattern for backup links behind a preferred dynamic-routing or lower-AD static path.
 - **Null route** (`ip route <summary-net> <mask> Null0`) drops any traffic matching a summarized range that doesn't match a more specific real route — prevents routing loops on a router that's advertising (or receiving) a summarized block it doesn't fully use, without needing an ACL.
@@ -78,6 +98,16 @@ Default administrative distances by route source:
 | EIGRP (external) route | 170 |
 | Internal BGP (iBGP) route | 200 |
 
+**CEF load balancing — per-destination vs per-packet**
+
+| | Per-destination (default) | Per-packet |
+|---|---|---|
+| Unit balanced | Flow (source + destination hash) | Individual packet |
+| Packet order | Preserved: one flow uses one path | Can arrive **out of order** at the destination |
+| Link utilization | Statistical, uneven with few large flows | Even across links |
+| VoIP / real-time | Safe | Degrades (choppy audio, jitter) |
+| Configured with | `ip load-sharing per-destination` (default) | `ip load-sharing per-packet` |
+
 ## Config Patterns
 ```ios-xe
 ! Directly attached static route (point-to-point, non-ARP interface only)
@@ -108,6 +138,11 @@ interface GigabitEthernet0/3
  ip address 10.0.3.1 255.255.255.0
 ! VRF-scoped static route (global config mode, note the vrf keyword)
 ip route vrf MGMT 10.0.9.0 255.255.255.0 10.0.3.2
+
+! CEF load sharing, set on each outbound interface of the equal-cost paths
+interface GigabitEthernet0/1
+ ip load-sharing per-destination   ! default: flows stay on one path
+! ip load-sharing per-packet        ! even links, but reorders packets; avoid for VoIP
 ```
 
 ## Design Baseline
@@ -132,6 +167,8 @@ A deviation from this table is a question ("is this intentional here?"), never a
 | `show ip arp` / `show ip arp <ip>` | IP→MAC bindings and age. **`Incomplete` means ARP was attempted and nobody answered** — the host is absent, off, or on the wrong VLAN |
 | `show ip interface <id> \| include Proxy` | Whether proxy ARP is enabled — check this before concluding a host's mask is correct |
 | `show arp timeout` / `show ip interface <id>` | ARP cache timeout (default 4hr) — compare against the switch's 300s MAC aging when diagnosing sustained unicast flooding |
+| `show ip cef <prefix> internal` | The CEF entry's load-sharing paths and hash buckets for the prefix: confirms ECMP made it into the FIB, not just the RIB |
+| `show ip cef exact-route <src-ip> <dst-ip>` | The single path CEF picks for that source/destination pair. Under per-destination it is the same every time, which is how you prove a flow sticks to one link |
 
 ## Intent Questions
 - Which routes should be in the RIB, from which source (connected/static/protocol), at which AD?
@@ -156,6 +193,7 @@ A deviation from this table is a question ("is this intentional here?"), never a
 - Trying to resolve a recursive static route's next hop purely via a default route entry — recursive statics explicitly cannot use 0.0.0.0/0 as their resolving route and will fail to install.
 - Assuming the lowest AD overall always wins in the RIB — it's actually the lowest AD *among routes a process actually submits*, and a routing protocol's internal best-path selection (e.g. BGP) can submit a higher-AD path (iBGP at 200) even when a lower-AD option (eBGP at 20) exists elsewhere in that protocol's table.
 - Mixing up ECMP (automatic, equal-metric, protocol-default-enabled) with EIGRP's unequal-cost load balancing (manual, different-metric, must be explicitly configured) — they produce very different traffic ratios and only EIGRP supports the unequal-cost variant.
+- **Enabling CEF per-packet load balancing on links that carry VoIP.** Packets of one call take different paths and **arrive out of order at the destination**, causing choppy audio. Keep the default per-destination, or keep voice off per-packet links. Reordering happens in transit/at the destination, **not** at the source.
 - Forgetting that assigning `vrf forwarding <vrf-name>` to an interface strips its previously configured IP address — always re-apply the IP address afterward, in that order.
 - **Configuring a static route for a VRF destination and omitting the `vrf` keyword.** The route installs cleanly in the global table, the VRF's table still has no path, and `show ip route` looks fine — you have to run `show ip route vrf <name>` to see the hole.
 - **Expecting a host to ARP for an off-subnet destination** — it never will. It ARPs for its default gateway and sends the frame there with the destination IP unchanged. If you're capturing and don't see an ARP for the far-end host, that's correct behavior, not a fault.
