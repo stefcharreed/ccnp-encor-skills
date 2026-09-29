@@ -48,12 +48,21 @@ explicitly asked.
 - `1.0.0/package.json` — plugin manifest
 - `1.0.0/.in_use/` — runtime PID lock file, gitignored, never commit
 
+## Where this repo lives (2026-09-29)
+The working copy is `~/git/ccnp-encor-skills`, and it is also the `local` marketplace
+(`claude plugin marketplace add ~/git/ccnp-encor-skills`). Claude Code loads a **copy**
+of it from `~/.claude/plugins/cache/local/ccnp-encor/<commit>/` — that cache is
+disposable and gets rebuilt, which is why a repo kept inside it kept losing `.git`.
+Never edit or commit in the cache. After pushing, run
+`claude plugin update ccnp-encor@local` (or restart) so the loaded skills pick it up.
+`.claude-plugin/marketplace.json` exists only locally (listed in `.git/info/exclude`).
+
 ## Workflow rule — always push after adding a skill
 **Every time a new topic skill is written or an existing one is edited,
 commit and push immediately.** Do not leave new skills uncommitted.
 
 ```bash
-cd ~/.claude/plugins/cache/local/ccnp-encor
+cd ~/git/ccnp-encor-skills
 git add -A
 git commit -m "Add <topic> skill"   # or "Update <topic> skill"
 git push

@@ -27,7 +27,7 @@ Also offer to read any currently open file if they have notes there. If they say
 
 ### Step 2 — Write the skill file
 
-Target path: `~/.claude/plugins/cache/local/ccnp-encor/1.0.0/skills/$ARGUMENTS/SKILL.md`
+Target path: `~/git/ccnp-encor-skills/1.0.0/skills/$ARGUMENTS/SKILL.md`
 
 Use this exact template — fill every section from the user's content:
 
@@ -165,7 +165,7 @@ cross-reference here.>
 
 ### Step 3 — Update the README roadmap
 
-Read `~/.claude/plugins/cache/local/ccnp-encor/README.md` and update the
+Read `~/git/ccnp-encor-skills/README.md` and update the
 "Roadmap — ENCOR exam domains" section so it stays in sync with the skill
 catalog:
 - Find the ENCOR domain the new topic belongs to (Architecture,
@@ -180,12 +180,12 @@ matching roadmap entry is an incomplete run.
 
 ### Step 4 — Commit and push
 
-This skill catalog is a git repo (see `~/.claude/plugins/cache/local/ccnp-encor/CLAUDE.md`).
+This skill catalog is a git repo (see `~/git/ccnp-encor-skills/CLAUDE.md`).
 Every new or updated skill (and the README update from Step 3) must be pushed
 immediately — do not leave it uncommitted. Run:
 
 ```bash
-cd ~/.claude/plugins/cache/local/ccnp-encor
+cd ~/git/ccnp-encor-skills
 git add -A
 git commit -m "Add $ARGUMENTS skill"
 git push
