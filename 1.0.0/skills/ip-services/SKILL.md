@@ -10,7 +10,9 @@ description: >
   IP, VIP gateway, virtual MAC, preemption, object tracking, track decrement,
   NAT, PAT, NAT overload, inside local, inside global, outside local, outside
   global, static NAT, pooled NAT, ip nat inside source, show ip nat
-  translations, NAT pool exhaustion, RFC 1918.
+  translations, NAT pool exhaustion, RFC 1918, PPPoE, dialer interface,
+  interface dialer, ip address negotiated, IPCP, ip address dhcp, DHCP client,
+  ip dhcp client lease, SLAAC, ipv6 address autoconfig, EUI-64.
 ---
 
 ## Purpose
@@ -186,6 +188,24 @@ another (NAT, PAT).
   which interface a packet happens to enter.** `ip nat inside source` rewrites
   the source of inside-originated traffic; `ip nat outside source` rewrites the
   source of outside-originated traffic.
+
+### Dynamic interface addressing (DHCP client, PPPoE dialer)
+- An interface can learn its IPv4 address instead of having it configured. The two
+  exam methods are **DHCP** (`ip address dhcp`) and **PPP/IPCP** (`ip address
+  negotiated`).
+- **PPPoE dialer interfaces** (`interface dialer <0-255>`) take their address via
+  **PPP's IPCP** negotiation with `ip address negotiated`, or via **DHCP** with `ip
+  address dhcp`. A **dialer rotary group** is a set of physical interfaces sharing one
+  logical dialer config; create the dialer interface first, then set the address on it.
+- **IPCP is PPP's IPv4 control protocol**, so "PPP" and "IPCP" are the same mechanism
+  seen at two levels. Boson counts them as two separate correct answers.
+- **DHCP client tuning** changes the request sent to the server: lease, hostname,
+  client identifier. `ip dhcp client lease <days> <hours>`, e.g. `0 3` = 3 hours.
+  **No lease configured → Cisco devices assign a one-day lease.**
+- **Not used by a dialer interface:** **SLAAC** (`ipv6 address autoconfig`, builds the
+  address from router advertisements on the segment) and **EUI-64** (`ipv6 address
+  <prefix> eui-64`, derives the interface ID from the burned-in MAC). Both are IPv6
+  host/interface mechanisms, not PPPoE address negotiation.
 
 ## Procedure
 
@@ -465,6 +485,22 @@ ip nat inside source list ACL-NAT-CAPABLE interface GigabitEthernet0/0 overload
 ! Tuning and clearing
 ip nat translation timeout 3600
 ! clear ip nat translation *          ! breaks every active session
+
+! Interface as an IPv4 DHCP client, asking for a 3-hour lease (default is 1 day)
+interface GigabitEthernet0/1
+ ip dhcp client lease 0 3
+ ip address dhcp
+
+! PPPoE client — logical dialer takes its address via PPP IPCP
+interface Dialer1
+ ip address negotiated        ! or: ip address dhcp
+ encapsulation ppp
+ dialer pool 1
+!
+interface GigabitEthernet0/0
+ no ip address
+ pppoe enable group global
+ pppoe-client dial-pool-number 1
 ```
 
 ## Design Baseline
@@ -604,6 +640,9 @@ this intentional here?" — never automatically a finding.*
 - **Sizing a NAT pool by host count instead of concurrent flows,** then being
   surprised when some users work and others get "Destination unreachable."
   Pool exhaustion is silent unless you are debugging.
+- **Picking SLAAC or EUI-64 for "how does a PPPoE dialer get an address?"** The
+  dialer uses **PPP/IPCP** (`ip address negotiated`) or **DHCP** (`ip address dhcp`).
+  SLAAC and EUI-64 are IPv6 addressing methods and are distractors here.
 - **Believing PTPv2 will interoperate with original PTP.** IEEE 1588-2008 is
   explicitly not backward compatible with IEEE 1588-2002.
 - **Ignoring `Port state FAULTY: TRUE` on a PTP port** — it is the direct
