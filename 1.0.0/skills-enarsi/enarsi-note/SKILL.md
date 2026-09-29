@@ -13,7 +13,7 @@ Creates a structured CCNP ENARSI (300-410) skill file from the user's study note
 the *same* skill template, and duplicating ~250 lines of instructions across two files would
 guarantee they drift apart. Instead:
 
-> **Read `~/.claude/plugins/cache/local/ccnp-encor/1.0.0/skills/ccnp-note/SKILL.md` first and
+> **Read `~/git/ccnp-encor-skills/1.0.0/skills/ccnp-note/SKILL.md` first and
 > follow it in full**, with the four substitutions below. If that file and this one ever
 > disagree about the template, `ccnp-note` wins — it is the source of truth.
 
