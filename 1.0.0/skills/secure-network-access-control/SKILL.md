@@ -572,7 +572,7 @@ something has proven who or what it is.
   - **Downside:** supported only by Cisco devices with **ASIC support for TrustSec**. If a
     tagged frame reaches a device that does not support native tagging in hardware, **the
     frame is dropped**.
-- **SXP (SGT Exchange Protocol) propagation** — a **TCP-based peer-to-peer** protocol for
+- **SXP (SGT Exchange Protocol) propagation** — a **TCP-based (port 64999) peer-to-peer** protocol for
   devices that **don't support inline tagging in hardware**. Communicates **IP-to-SGT
   mappings** from non-inline-tagging switches to other network devices, which keep an SGT
   mapping database to check packets against and enforce policy.
@@ -783,7 +783,7 @@ something has proven who or what it is.
 | Phase | What happens | Mechanisms |
 |---|---|---|
 | Ingress classification | SGT assigned to user/endpoint/resource entering the TrustSec domain | **Dynamic** (ISE authz via 802.1x/MAB/WebAuth); **static** (IP, subnet, VLAN, L2 interface, L3 logical interface, port, port profile → SGT); central IP-SGT DB downloaded from ISE |
-| Propagation | Mappings communicated to enforcing devices | **Inline (native) tagging** — SGT in the CMD field, EtherType **0x8909**, 16-bit value; **SXP** — TCP peer-to-peer, **speaker → listener**, single- or multi-hop; **pxGrid** from ISE |
+| Propagation | Mappings communicated to enforcing devices | **Inline (native) tagging** — SGT in the CMD field, EtherType **0x8909**, 16-bit value; **SXP** — TCP **64999** peer-to-peer, **speaker → listener**, single- or multi-hop; **pxGrid** from ISE |
 | Egress enforcement | Allow/drop applied at the egress point | **SGACL** (routers/switches, source SGT × destination SGT); **SGFW** (Secure Firewalls, tag-based rules defined locally) |
 
 **MACsec Security Tag fields**

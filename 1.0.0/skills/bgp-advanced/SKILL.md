@@ -42,6 +42,11 @@ pick a single best path among multiple candidates.
   to the AS_Path attribute, numbered 1–500).
 - **Prefix list matching length rule:** `high-order-bit-count < ge-value
   <= le-value`. A bare prefix (no ge/le) is an exact match.
+- **`match ip address <acl-number>` with a standard ACL matches the network
+  address only, not prefix length.** `access-list 1 permit 192.168.0.0
+  0.0.0.255` matches 192.168.0.0/24, /25, /26 — anything whose network
+  address falls inside 192.168.0.x. If prefix length is part of the intent,
+  it must be `match ip address prefix-list` with `ge`/`le`.
 - **Route map structure (4 parts):** sequence number (processing order),
   conditional match criteria (OR across multiple values on one match line,
   AND across multiple distinct match commands), processing action
@@ -69,6 +74,16 @@ pick a single best path among multiple candidates.
 - **Setting communities:** `set community <community> [additive]` — by
   default this overwrites any existing communities; `additive` appends
   instead.
+- **A community is enforced by the receiving router, not the sender.**
+  Setting `no-export` outbound toward an eBGP peer does not stop *you*
+  advertising it — that route crosses the eBGP link normally, community
+  attached. It tells the *receiving* AS not to re-advertise it to *its*
+  eBGP peers. A no-export route therefore lives in exactly two ASes:
+  yours and your neighbor's, where it still floods iBGP freely.
+  AS100 → AS200 fine; AS200 → AS300 blocked. Boson's phrasing: "the
+  community attribute does not modify how RouterA advertises the routes;
+  it modifies how neighbor routers advertise the routes received from
+  RouterA."
 - **BGP best-path algorithm order (memorize this order):** 1) Weight
   (highest, Cisco-only, local, not advertised) → 2) Local preference
   (highest, advertised within the AS only, not to eBGP) → 3) Locally
@@ -338,6 +353,11 @@ A deviation from this table is a question ("is this intentional here?"), never a
   pair.
 - Forgetting `neighbor <ip> send-community` — communities set in a route
   map silently never leave the local router without this.
+- **Reading `set community no-export` as "this route never leaves my AS."**
+  It leaves — exactly one eBGP hop. It stops at the *next* AS's eBGP
+  boundary, not yours. `no-advertise` is the one that stops it at the
+  receiving router (not even iBGP); `local-as` stops it at the sub-AS edge
+  in a confederation.
 - **Assuming `as-set` only costs the component's own AS its route** — the
   AS whose ASN appears in the AS_SET rejects the **whole aggregate**, so it
   also loses every other prefix summarized inside it.

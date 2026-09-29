@@ -32,6 +32,9 @@ IP routing essentials cover how a router decides which path wins (prefix length,
 - **The "Destination Host Unreachable" you see for a same-subnet failure is generated locally by your own IP stack** — nothing ever left the wire, and no router was involved. For a **different-subnet** failure the router does the ARPing and returns a genuine **ICMP Type 3 Code 1**. Same message, completely different origin — a classic exam distinction.
 - **Proxy ARP** (`ip proxy-arp`, historically **on by default** on Cisco router interfaces) makes a router answer an ARP for an IP it has a route to, supplying its own MAC. It silently masks host misconfiguration — a wrong subnet mask still "works" until proxy ARP is disabled elsewhere. **The tell: `arp -a` on the host shows several different IPs sharing one MAC.** It's also an MITM vector, so `no ip proxy-arp` is standard hardening.
 - A **directly attached static route on an Ethernet interface** forces an ARP for *every* destination matching that route (see Common Pitfalls) — this is the same ARP machinery, which is why fully specified statics are preferred on multi-access links.
+- **Two generations of VRF syntax, both exam-fair game.** Legacy `ip vrf <name>` + `ip vrf forwarding <name>` is **VRF-Lite, IPv4 only** — no `address-family` sub-mode exists under it. The newer `vrf definition <name>` + `vrf forwarding <name>` is multi-address-family (hence the required `address-family ipv4`/`ipv6` step). Same concept, and the interface behavior is identical: applying either form strips the interface's IP.
+- **A static route is VRF-scoped by the `vrf` keyword, in global config:** `ip route vrf <name> <net> <mask> <next-hop>`. Without it the route lands in the global table and the VRF never sees it. Same pattern for the other VRF-aware commands (`ping vrf`, `traceroute vrf`, `show ip route vrf`).
+- **An interface belongs to exactly one VRF** — including virtual ones. A tunnel interface takes `vrf forwarding` like any physical port.
 - **VRF (Virtual Routing and Forwarding)** creates isolated logical routers on one physical box — separate routing/forwarding tables per VRF, allowing overlapping IP address ranges across VRFs with no conflict. All interfaces default to the **global VRF** (the standard routing table) until explicitly assigned elsewhere. Conceptually similar to VLANs on a switch, but VRF segmentation operates at Layer 3 with full per-VRF dynamic routing rather than 802.1Q tagging at Layer 2.
 
 ## Procedure
@@ -103,6 +106,8 @@ vrf definition MGMT
 interface GigabitEthernet0/3
  vrf forwarding MGMT
  ip address 10.0.3.1 255.255.255.0
+! VRF-scoped static route (global config mode, note the vrf keyword)
+ip route vrf MGMT 10.0.9.0 255.255.255.0 10.0.3.2
 ```
 
 ## Design Baseline
@@ -152,6 +157,7 @@ A deviation from this table is a question ("is this intentional here?"), never a
 - Assuming the lowest AD overall always wins in the RIB — it's actually the lowest AD *among routes a process actually submits*, and a routing protocol's internal best-path selection (e.g. BGP) can submit a higher-AD path (iBGP at 200) even when a lower-AD option (eBGP at 20) exists elsewhere in that protocol's table.
 - Mixing up ECMP (automatic, equal-metric, protocol-default-enabled) with EIGRP's unequal-cost load balancing (manual, different-metric, must be explicitly configured) — they produce very different traffic ratios and only EIGRP supports the unequal-cost variant.
 - Forgetting that assigning `vrf forwarding <vrf-name>` to an interface strips its previously configured IP address — always re-apply the IP address afterward, in that order.
+- **Configuring a static route for a VRF destination and omitting the `vrf` keyword.** The route installs cleanly in the global table, the VRF's table still has no path, and `show ip route` looks fine — you have to run `show ip route vrf <name>` to see the hole.
 - **Expecting a host to ARP for an off-subnet destination** — it never will. It ARPs for its default gateway and sends the frame there with the destination IP unchanged. If you're capturing and don't see an ARP for the far-end host, that's correct behavior, not a fault.
 - **Reading "Destination Host Unreachable" as proof a router replied.** On a same-subnet ARP failure that message is generated locally and no packet ever left the host; only the different-subnet case produces a real ICMP Type 3 Code 1 from a router.
 - **Letting proxy ARP hide a bad subnet mask.** Connectivity works, the config is wrong, and it breaks later for reasons that look unrelated. Multiple IPs mapping to one MAC in `arp -a` is the signature.
