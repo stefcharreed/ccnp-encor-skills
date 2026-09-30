@@ -34,6 +34,7 @@ description: >
   inspect, class-default, stateful inspection, stateful firewall, outside-to-self,
   self-to-outside, show policy-map type inspect zone-pair, show class-map type inspect,
   Control Plane Policing, CoPP, control-plane, service-policy input, police, conform-action,
+  CoPP match-all vs match-any, data plane, management plane, services plane,
   exceed-action, violate-action, CIR, bc, be, show policy-map control-plane, EPC, Embedded
   Packet Capture, Catalyst 9000 default CoPP, no cdp enable, no lldp transmit, no lldp
   receive, service tcp-keepalive-in, service tcp-keepalive-out, no ip redirects, ICMP
@@ -240,6 +241,18 @@ commands that turn off what you never use.
 - CoPP polices traffic destined for the router's control plane to a given rate, minimizing
   the ability to overload the router. Built from ACLs → `class-map match-all` → `policy-map`
   with `police` → applied under `control-plane`.
+- **The four router planes:** **data** (forwarding transit traffic), **control** (the route
+  processor: routing protocols, network management, process-switched packets),
+  **management** (SSH, Telnet, SNMP to the device) and **services**. CoPP protects the
+  control plane, and because traffic must pass through the control plane to reach the
+  management plane, **it protects the management plane too**. It can filter and rate-limit
+  traffic both entering and leaving the control plane (`service-policy input | output`).
+- **⚠ `match-all` + two ACLs in one CoPP class = nothing matched.** `class-map` defaults to
+  `match-all` (AND). A class that does `match access-group copp-telnet` **and** `match
+  access-group copp-ssh` requires a packet to be Telnet *and* SSH at once, which is
+  impossible. Neither protocol gets policed; both fall to `class-default`. Fix: `class-map
+  match-any` (OR), or one ACL per class, as in the example config below, which is why its
+  `match-all` classes work.
 - **Finding the correct rate without impacting network stability is not simple.** The
   chapter's method: set **`violate-action transmit` for all the vital classes until a
   baseline for normal traffic flows is established**, then tighten over time. Traffic that
@@ -905,6 +918,10 @@ its own recommendations explicitly, so no external sourcing was needed and none 
   troubleshooting clarity, but **do not add `log`** — it can fill the syslog.
 - **ACLs referenced by inspect class maps still increment counters** even though they are not
   blocking anything. Counter hits there prove classification, not enforcement.
+- **"Which traffic does this CoPP policy police?" with two `match access-group` lines under a
+  `match-all` class.** Answer: **neither**, since no packet matches both ACLs. To police both,
+  re-create the class with `class-map match-any`. To police only one, remove the other `match`
+  line.
 - **CoPP's `ACL-CoPP-Routing` in the chapter does not match unicast PIM, unicast OSPF, or
   unicast EIGRP.** Those fall into class-default, where the rate is small and the violate
   action may be `drop`.
