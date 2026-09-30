@@ -13,6 +13,7 @@ description: >
   east-west traffic, WAN edge block, Internet edge block, data center block,
   network services edge, high availability network design, network-level HA,
   system-level HA, redundant supervisor, route processor, RP switchover, dual RP,
+  RPR, RPR+, Route Processor Redundancy, redundancy mode, mode sso, mode rpr,
   SSO, Stateful Switchover, NSF, Nonstop Forwarding, GR, Graceful Restart, RFC 4724,
   NSR, Nonstop Routing, SSO/NSF with GR, SSO/NSF with NSR, GR-aware, GR Helper,
   NSF-aware, GR-unaware, SSO/NSF-capable, checkpointing, FIB preservation, BFD, UDLD,
@@ -114,6 +115,21 @@ whether a single failure is invisible or an outage.
   rebuilds adjacencies, the routing table, and the FIB.
 - Four supported combinations: **SSO and NSF**, **SSO/NSF with GR**, **SSO/NSF with
   NSR**, **SSO/NSF with NSR and GR**.
+
+**Supervisor redundancy modes — RPR vs RPR+ vs SSO** *(Boson; not in the OCG)*
+The redundancy **mode** decides how "ready" the standby supervisor/RP is when the active fails:
+- **RPR (Route Processor Redundancy)** — the standby is only **partially initialized** until the
+  active fails. On switchover it must **finish initializing and every module in the switch
+  reloads**; only then does it take over forwarding. **Can take several minutes.**
+- **RPR+** — the standby is fully initialized but not state-synchronized, so line cards are
+  not reloaded; faster than RPR, slower than SSO. *(Named by Boson's reference, "Configuring RPR
+  and RPR+ Supervisor Engine Redundancy"; detail from general knowledge.)*
+- **SSO** — the standby is **completely initialized and synchronized** with the active, with
+  **identical Layer 2 information**. Failover can complete in **under three seconds** in some
+  cases. Besides a hardware failure, Boson notes an SSO switchover can also be triggered if the
+  two supervisors' **clocks fail to synchronize**.
+- Configured under `redundancy` → `mode rpr` / `mode rpr-plus` / `mode sso` (platform-dependent).
+  **SSO is the mode that makes NSF possible**; RPR/RPR+ give no NSF.
 
 **SSO and NSF**
 - **SSO** is an *internal* router redundancy feature: it checkpoints (synchronizes /
@@ -303,6 +319,14 @@ whether a single failure is invisible or an outage.
 | Access | Network edge | Direct network access for endpoints and users | High-bandwidth wired/wireless attachment, VLAN segmentation, QoS trust boundary, endpoint security; access switches are **not** interconnected to each other |
 | Distribution | Aggregation layer | Aggregation point for access switches; services and control boundary between access and core | STP boundary on the Layer 2 side, route summarization on the Layer 3 side, FHRP gateway for Layer 2 access, deployed in pairs (**max 2 per building block**) |
 | Core | Backbone | Connects distribution layers in large environments | Scalability, high availability, fast convergence; interconnects network blocks; reduces N × (N − 1) links to N links |
+
+**Redundancy modes compared**
+
+| Mode | Standby state | On switchover | Speed |
+|---|---|---|---|
+| **RPR** | Partially initialized | Finishes booting; **all modules reload** | **Minutes** |
+| **RPR+** | Fully initialized, not synchronized | No line-card reload | Faster than RPR |
+| **SSO** | Fully initialized **and synchronized** (identical L2 state) | Takes over immediately; with NSF the FIB keeps forwarding | Seconds (Boson: < 3 s in some cases) |
 
 **High availability technologies**
 
@@ -520,6 +544,16 @@ this intentional here?" — never automatically a finding.*
   internal NSF feature. Cisco used "NSF" for GR first, and the CLI never caught up.
 - **GR is the only one of the three that talks to neighbors.** SSO/NSF and NSR are
   internal. Enabling GR against a GR-unaware neighbor protects nothing.
+- **RPR vs SSO in a matching question:** "partially initialized until the active fails" =
+  **RPR**; "completely initialized and synchronized with the primary" = **SSO**. RPR reloads
+  every module and takes minutes; SSO takes seconds.
+- **Boson's NSF definition vs the OCG's.** Boson describes NSF as forwarding during a switchover
+  by "**retrieving information used to create the routing tables from other NSF-enabled
+  devices**." That describes **Graceful Restart** (neighbors helping), which Cisco historically
+  called NSF — see the naming trap above. The OCG defines NSF strictly as the **internal FIB
+  checkpoint**. Both agree on the exam-level answer: NSF = *packets keep forwarding during a
+  supervisor switchover*. If a question hinges on "internal vs interacts with neighbors," use
+  the OCG split (NSF internal, GR external).
 - **"NSF-aware" is a misnomer** for GR-aware / GR Helper — and a **GR-aware router does
   not need dual RPs** or SSO/NSF capability of its own.
 - SSO by itself does **not** preserve Layer 3 control plane state; adjacencies still drop.
