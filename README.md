@@ -109,6 +109,13 @@ chapter to capture them from — they are noted here rather than tracked as outs
 - **First-hop security (port security, DHCP snooping, DAI)** — CCNA/SWITCH-level material the
   OCG assumes. Adding it would need a non-OCG source.
 
+**ENCOR v1.2 (live 2026-03-19).** The OCG above targets v1.1. v1.2 **removed all wireless**
+(the `wireless-*` skills below, marked *not on v1.2*) and hardware/software switching, and
+**added** multicast SSM/bidir/MSDP and Catalyst Center AI-powered workflows. Those additions are
+captured from official Cisco docs in:
+
+- [x] [ENCOR v1.2 gap](1.0.0/skills/encor-v1-2-gap/SKILL.md) — v1.1→v1.2 blueprint diff, MSDP, bidir-PIM, SSM & SSM mapping, Catalyst Center AI (AI Network Analytics, AI Endpoint Analytics, AI Assistant), Catalyst renames
+
 ### 1. Architecture (15%)
 - [x] [Enterprise Network Architecture](1.0.0/skills/enterprise-network-architecture/SKILL.md) — hierarchical LAN design (access/distribution/core), network blocks & PINs, HA design, SSO/NSF with GR and NSR, two-tier vs three-tier, Layer 2 vs routed access, simplified campus design (VSS/SWV/StackWise)
 - [x] [Fabric Technologies](1.0.0/skills/fabric-technologies/SKILL.md) — SD-Access (LISP control plane, VXLAN-GPO data plane, TrustSec policy plane, fabric roles, DNA Center layers & workflows) and SD-WAN (vManage/vSmart/vBond/edge, OMP, AAR, Cloud OnRamp)
@@ -136,16 +143,16 @@ chapter to capture them from — they are noted here rather than tracked as outs
 - [x] [Multicast](1.0.0/skills/multicast/SKILL.md) — IGMP, IGMP snooping, PIM dense/sparse mode, RPF, rendezvous points, Auto-RP, BSR
 - [x] [Quality of Service (QoS)](1.0.0/skills/qos/SKILL.md) — DiffServ/IntServ, DSCP & PHBs, MQC, trust boundary, policing/shaping, token buckets, srTCM/trTCM, CBWFQ/LLQ, WRED
 - [x] [IP Services](1.0.0/skills/ip-services/SKILL.md) — NTP stratums & peers, PTP/IEEE 1588, FHRP (HSRP/VRRP/GLBP), object tracking, NAT/PAT
-- [x] [Wireless Signals & Modulation](1.0.0/skills/wireless-signals-and-modulation/SKILL.md) — RF fundamentals, dB/dBm/EIRP, free space path loss, RSSI/SNR, modulation, MIMO, DRS
-- [x] [Wireless Infrastructure](1.0.0/skills/wireless-infrastructure/SKILL.md) — autonomous/centralized/cloud/distributed/EWC deployments, AP modes, CAPWAP discovery & join, profiles and tags, antennas
-- [x] [Wireless Roaming & Location Services](1.0.0/skills/wireless-roaming-and-location-services/SKILL.md) — intra/intercontroller roaming, Layer 2 vs Layer 3 roams, anchor/foreign controllers, mobility groups & domains, RSS trilateration, RF fingerprinting
-- [x] [Troubleshooting Wireless Connectivity](1.0.0/skills/wireless-troubleshooting/SKILL.md) — scoping by report pattern, Client 360 View, Radioactive Trace, AP join statistics, channel utilization, AP operational config
+- [x] *(not on v1.2)* [Wireless Signals & Modulation](1.0.0/skills/wireless-signals-and-modulation/SKILL.md) — RF fundamentals, dB/dBm/EIRP, free space path loss, RSSI/SNR, modulation, MIMO, DRS
+- [x] *(not on v1.2)* [Wireless Infrastructure](1.0.0/skills/wireless-infrastructure/SKILL.md) — autonomous/centralized/cloud/distributed/EWC deployments, AP modes, CAPWAP discovery & join, profiles and tags, antennas
+- [x] *(not on v1.2)* [Wireless Roaming & Location Services](1.0.0/skills/wireless-roaming-and-location-services/SKILL.md) — intra/intercontroller roaming, Layer 2 vs Layer 3 roams, anchor/foreign controllers, mobility groups & domains, RSS trilateration, RF fingerprinting
+- [x] *(not on v1.2)* [Troubleshooting Wireless Connectivity](1.0.0/skills/wireless-troubleshooting/SKILL.md) — scoping by report pattern, Client 360 View, Radioactive Trace, AP join statistics, channel utilization, AP operational config
 
 ### 4. Network Assurance (10%)
 - [x] [Network Assurance](1.0.0/skills/network-assurance/SKILL.md) — ping/traceroute/debug discipline, SNMP (MIB structure, OIDs, communities, traps), syslog severities & destinations, NetFlow and Flexible NetFlow (records/exporters/monitors/samplers), SPAN/RSPAN/ERSPAN, IP SLA, Cisco DNA Center Assurance (Network Time Travel, Client 360, Path Trace)
 
 ### 5. Security (20%)
-- [x] [Authenticating Wireless Clients](1.0.0/skills/wireless-client-authentication/SKILL.md) — Open Auth, PSK/WPA personal, WPA3 SAE, EAP & 802.1x roles, four-way EAPOL handshake, key hierarchy, WebAuth (LWA/CWA)
+- [x] *(not on v1.2)* [Authenticating Wireless Clients](1.0.0/skills/wireless-client-authentication/SKILL.md) — Open Auth, PSK/WPA personal, WPA3 SAE, EAP & 802.1x roles, four-way EAPOL handshake, key hierarchy, WebAuth (LWA/CWA)
 - [x] [Secure Network Access Control](1.0.0/skills/secure-network-access-control/SKILL.md) — Cisco SAFE (PINs, secure domains, attack continuum), the Cisco Secure portfolio (Talos, Secure Malware Analytics, AMP, Secure Client, Umbrella, WSA, ESA, Secure IPS/NGFW, Secure Network & Cloud Analytics, ISE/pxGrid), and NAC (802.1x/EAP methods, EAP chaining, MAB, LWA/CWA WebAuth, IBNS 2.0, TrustSec SGT/SXP/SGACL, MACsec)
 - [x] [Network Device Access Control & Infrastructure Security](1.0.0/skills/network-device-access-control/SKILL.md) — ACLs on interfaces & vty (`access-class`), CLI access methods, password types 0/5/7/8/9, privilege levels & RBAC, `transport input`, SSH v1/v2, EXEC & absolute timeouts, AAA framework, TACACS+ vs RADIUS, the 11-step TACACS+ device-access config, ZBFW (zones, self/default zones, drop/pass/inspect, zone pairs), CoPP, device hardening
 
