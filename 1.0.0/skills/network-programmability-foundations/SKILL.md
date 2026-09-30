@@ -11,7 +11,8 @@ description: >
   400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, Postman, Postman
   Builder, Postman collections, Postman history, Postman environment, API testing, DevNet
   sandbox, XML, Extensible Markup Language, start tag, end tag, JSON, JavaScript Object
-  Notation, key/value pairs, curly braces, data format, indentation, Cisco DNA Center API,
+  Notation, key/value pairs, curly braces, data format, indentation, Content-Type,
+  MIME type, media type, application/json, text/json, Accept header, charset, Cisco DNA Center API,
   Catalyst Center API, Token API, sandboxdnac.cisco.com, basic authentication, X-Auth-Token,
   auth token, Network Device API, device inventory API, limit, offset, query parameters,
   API filters, API documentation, Cisco vManage API, SD-WAN API, Authentication API,
@@ -128,6 +129,30 @@ script and know what it does.
     `}`** — curly braces.
   - As with XML it is easier to read indented, but **even without indentation JSON is
     extremely easy to read.**
+
+**HTTP `Content-Type` and MIME (media) types**
+- **Headers arrive before the body.** The server sends its HTTP headers first; they tell the
+  client how to handle the data that follows. **`Content-Type` names the media type of the
+  body** being sent (either direction). **`Accept`** is the client asking what format it
+  wants back, which is why RESTCONF calls send `Accept: application/yang-data+json`.
+- **Format:** `type/subtype`, optionally followed by parameters after a semicolon, e.g.
+  `Content-Type: text/html; charset=UTF-8`. The first word is the broad kind of data
+  (`application`, `text`, `audio`, `image`, `video`); the second is the specific format
+  (`json`, `xml`, `html`, `jpeg`, `mp4`). Media types are **registered by IANA**.
+- **JSON body → `application/json`.** JSON (and XML) is meant to be **parsed by an
+  application**, even though it's human-readable. **`text/json` is not a valid (registered)
+  MIME type**, the classic distractor.
+- **Tags → markup types.** A body with tags like `<b>` is HTML (`text/html`); structured tags
+  with a formal schema is XML (`text/xml` or `application/xml`). A `{ "key": "value" }` body
+  has no tags, so it can't be either.
+- **JavaScript:** Boson says `application/javascript` = parse with a JS-capable app and
+  `text/javascript` is **obsolete**. **RFC 9239 (2022) reverses that:** `text/javascript` is
+  now the standard and `application/javascript` is obsolete. For a Boson question use
+  Boson's answer; in real work, `text/javascript`.
+- **Cisco APIs in this catalog:** Catalyst Center (DNA Center) → `application/json`;
+  vManage authentication → `application/x-www-form-urlencoded`; RESTCONF →
+  `application/yang-data+json` (or `+xml`). A wrong Content-Type is a `400`/`415`-class
+  failure (see Troubleshooting Checklist).
 
 **HTTP status codes**
 - The response code is the first thing to read on any API call — it separates "the network is
@@ -924,6 +949,9 @@ question for the operator, not automatically a finding.**
   controller's data. This is why the chapter says to practice in the DevNet sandbox.
 - **Cisco DNA Center requires JSON — it is not optional.** The controller **expects all incoming
   REST data in JSON format**.
+- **Picking `text/json` for a JSON response.** It isn't a registered MIME type; the answer is
+  **`application/json`**. Use the body's shape to decide: curly braces and key/value pairs →
+  `application/json`; tags → `text/html` or `text/xml`.
 - **DNA Center and vManage authenticate differently.** `application/json` + Basic Auth + a
   **token** vs `application/x-www-form-urlencoded` + `j_username`/`j_password` + a
   **`JSESSIONID`**. This is the chapter's most reliably tested distinction (quiz Q4 and Q10 are
