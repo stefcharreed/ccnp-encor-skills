@@ -8,7 +8,7 @@ description: >
   agentless, push model, pull model, EEM, Embedded Event Manager, EEM applet, event
   manager applet, event detector, EEM event detectors, syslog event detector, CLI event
   detector, event none, event syslog pattern, event cli pattern, sync yes, action cli
-  command, action syslog msg, action mail, event manager environment, event manager run,
+  command, action syslog msg, action mail, action policy, event manager environment, event manager run,
   event manager session cli username, _email_server, _email_to, _email_from, _email_cc,
   $_cli_result, file prompt quiet, debug event manager, debug event manager all, debug
   event manager action cli, debug event manager action mail, HA_EM_6_LOG, Tcl, tclsh,
@@ -72,8 +72,20 @@ and what each one calls its own parts.
 - **CLI patterns can also be matched as an event.** When certain commands are entered into the
   router at the CLI, they can trigger an EEM event — the chapter's example matches
   `"write mem.*"` and backs the config up to TFTP as a result.
-- **`event none`** means there is **no automatic event being monitored** and the applet runs
-  **only when triggered manually**, with **`event manager run applet-name`**.
+- **`event none`** means the applet has **no event detector of its own**. It never
+  self-triggers, but it can still run **two ways**:
+  1. **Manually:** **`event manager run applet-name`** (a **privileged EXEC** command,
+     `Router#`, not global config, despite what Boson's explanation says).
+  2. **Called by another applet:** a second applet that *does* have an event detector runs it
+     with **`action <label> policy applet-name`**. The event belongs to the caller, not to the
+     `event none` applet.
+  ```
+  event manager applet myapplet2
+   event syslog pattern "LINK-3-UPDOWN"
+   action 1 policy myapplet          ! runs the event-none applet when myapplet2 fires
+  ```
+  **Exam wording:** Boson's correct answer is "can be run **manually or when triggered by an
+  event**". "Only manually" is the trap, because it misses the `action policy` path.
 - Three rules the chapter states as NOTEs, all of which are the kind of thing that silently
   breaks an applet:
   - **Include `enable` and `configure terminal` at the beginning of the actions.** The applet
@@ -805,7 +817,7 @@ Rows traced to the ENCOR 350-401 OCG Chapter 29 with page numbers. Two rows are 
 | `show event manager environment` | The `event manager environment` variables and their values (`$tftpserver`, `$filename`) — a typo here breaks the action silently |
 | `show event manager history events` | Recent events EEM saw, with time and event type |
 | `show running-config \| section event manager` | The applet as configured, including the expanded action labels in string order |
-| `event manager run <applet-name>` | Manually fires an `event none` applet — the way to test without waiting for a real event |
+| `event manager run <applet-name>` | Manually fires an `event none` applet — the way to test without waiting for a real event. Privileged EXEC, not global config |
 | `debug event manager action cli` | The `HA_EM_6_LOG` trace of each CLI action as it runs — IN/OUT lines showing exactly what the applet typed and what the device replied |
 | `debug event manager all` | **Everything** the applet does, including actions the `action cli` debug does not cover |
 | `debug event manager action mail` | **Filters out all other debug messages** so you can focus on SMTP errors — the chapter's specific recommendation for mail troubleshooting |
@@ -915,8 +927,10 @@ Rows traced to the ENCOR 350-401 OCG Chapter 29 with page numbers. Two rows are 
 - **AAA command authorization silently kills applet CLI commands** unless `event manager session
   cli username <username>` is present.
 - **EEM action labels are strings, not numbers.** `10.0` runs after `1.0`, not after `9.0`.
-- **`event none` means the applet never self-triggers** — it only runs on `event manager run
-  <name>`. An applet that "never fires" may be working exactly as configured.
+- **`event none` means the applet never self-triggers**. It runs only via `event manager run
+  <name>` or another applet's `action <label> policy <name>`. An applet that "never fires"
+  may be working exactly as configured. On an exam, pick **"manually or when triggered by an
+  event"** over "only manually".
 - **`file prompt quiet` is a global setting the applet must restore.** The chapter's backup
   applet turns it off again in action 7.0 for a reason.
 - **`debug event manager all` and `debug event manager action mail` are different tools.** Use
