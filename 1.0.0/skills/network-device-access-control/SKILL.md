@@ -247,6 +247,19 @@ commands that turn off what you never use.
   control plane, and because traffic must pass through the control plane to reach the
   management plane, **it protects the management plane too**. It can filter and rate-limit
   traffic both entering and leaving the control plane (`service-policy input | output`).
+- **Why police SSH/Telnet (management) at all:** traffic *to* the router is punted to the
+  **same route processor that runs OSPF/BGP**. The "management plane" is a logical category,
+  not separate hardware. An SSH SYN flood, brute-force run, or runaway SNMP poller can peg the
+  CPU, hellos/keepalives are missed, and adjacencies drop, so **a management-traffic problem
+  becomes a routing outage**. CoPP gives each class its own rate budget (e.g. management at
+  32 kbps in the example below), so admins still get in but no class can starve routing. It
+  can also **drop** management traffic from untrusted sources, or Telnet entirely.
+- **CoPP vs vty `access-class`: use both.** `access-class` decides **who may log in**, but
+  the packet has already reached the CPU when it's rejected, so a flood still burns CPU. CoPP
+  acts **before the route processor** (in hardware on many platforms) and decides **how
+  much** reaches it. (Contrast: firewalls such as Palo Alto physically separate management and
+  dataplane CPUs. Most routers don't, which is why IOS needs CoPP to enforce that separation
+  in policy.)
 - **⚠ `match-all` + two ACLs in one CoPP class = nothing matched.** `class-map` defaults to
   `match-all` (AND). A class that does `match access-group copp-telnet` **and** `match
   access-group copp-ssh` requires a packet to be Telnet *and* SSH at once, which is
