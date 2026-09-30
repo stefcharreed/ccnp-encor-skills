@@ -38,15 +38,17 @@ Place the new skill under whichever of these four the topic belongs to:
 
 | Domain | Weight | Typical topics |
 |---|---|---|
-| **1. Layer 3 Technologies** | **35%** | EIGRP and OSPFv2/v3 troubleshooting, BGP (eBGP/iBGP, attributes, communities), route redistribution, route maps and prefix lists, administrative distance, VRF-lite, policy-based routing, routing loop prevention |
-| **2. VPN Technologies** | **20%** | MPLS (LDP, L3VPN), DMVPN (phases 1–3, NHRP, mGRE), IPsec (site-to-site, tunnel vs transport) |
-| **3. Infrastructure Security** | **20%** | ACLs, uRPF, CoPP, device access control and AAA, control plane protection |
-| **4. Infrastructure Services** | **25%** | Device management (SSH, console, logging), SNMP, NetFlow/Flexible NetFlow, IP SLA and object tracking, NETCONF/RESTCONF, DHCP, NTP |
+| **1. Layer 3 Technologies** | **35%** | Administrative distance, route maps, loop prevention (filtering, tagging, split horizon, route poisoning), redistribution, summarization, PBR, VRF-Lite, BFD (describe), EIGRP troubleshooting (named/classic, IPv4/IPv6, stubs, load balancing, metrics), OSPFv2/v3 troubleshooting (network/area/router types, virtual links, path preference), BGP troubleshooting (iBGP/eBGP, VRF-Lite, next-hop, multihop, 4-byte/private AS, peer groups, path selection, route reflector, policies) |
+| **2. VPN Technologies** | **20%** | MPLS operations (describe: LSR, LDP, label switching, LSP), MPLS L3VPN (describe), DMVPN single hub (GRE/mGRE, NHRP, **IPsec as DMVPN protection**, dynamic neighbor, spoke-to-spoke) |
+| **3. Infrastructure Security** | **20%** | IOS AAA (TACACS+, RADIUS, local), IPv4 ACLs (standard, extended, time-based), IPv6 traffic filters, uRPF, CoPP, **IPv6 first-hop security** (describe: RA guard, DHCP guard, binding table, ND inspection/snooping, source guard) |
+| **4. Infrastructure Services** | **25%** | Device management (console/VTY, Telnet, HTTP(S), SSH, SCP, (T)FTP), SNMP v2c/v3, logging (local, syslog, debugs, conditional debugs, timestamps), IPv4/IPv6 DHCP (client, IOS server, relay, options), IP SLA (jitter, tracking objects, delay, connectivity), NetFlow (v5, v9, Flexible NetFlow), **DNA Center assurance** |
+
+Source: Cisco's ENARSI **v1.1** blueprint PDF, checked 2026-09-29. **NTP and NETCONF/RESTCONF are not on ENARSI v1.1** (they are ENCOR topics). Re-check the blueprint if Cisco releases a new version.
 
 ## Overlap with the ENCOR catalog
 
 **ENARSI revisits several topics ENCOR already covers** — EIGRP, OSPF, BGP, ACLs, CoPP, AAA,
-SNMP, NetFlow, IP SLA, NETCONF/RESTCONF — usually at greater depth and with a troubleshooting
+SNMP, NetFlow, IP SLA — usually at greater depth and with a troubleshooting
 rather than an implementation slant. Before writing a new ENARSI skill:
 
 1. **Check whether an ENCOR skill already covers it** (`ls 1.0.0/skills/`).
