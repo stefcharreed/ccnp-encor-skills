@@ -497,7 +497,6 @@ this intentional here?" — never automatically a finding.*
 | `show bfd neighbors` | Session state `Up` with the expected interval/multiplier — proves fast link-failure detection is actually running |
 | `show udld neighbors` | Bidirectional neighbors detected on fiber uplinks; missing entries mean UDLD is not protecting that link |
 | `show ip route summary` | Route count at the core — a large number of specifics from one building block means distribution summarization is missing or broken |
-
 | `show redundancy clients` / `show redundancy counters` | Which features are registered as SSO clients, and sync/switchover counters *(from the Catalyst 9400 guide)* |
 | `show cef state` | CEF/NSF state on the active and standby — confirms the FIB is being checkpointed |
 
