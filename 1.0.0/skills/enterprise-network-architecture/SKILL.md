@@ -131,6 +131,21 @@ The redundancy **mode** decides how "ready" the standby supervisor/RP is when th
 - Configured under `redundancy` → `mode rpr` / `mode rpr-plus` / `mode sso` (platform-dependent).
   **SSO is the mode that makes NSF possible**; RPR/RPR+ give no NSF.
 
+**What Cisco's platform guide adds** *([NSF with SSO, Catalyst 9400, IOS XE 16.6](https://www.cisco.com/c/dam/en/us/td/docs/switches/lan/catalyst9400/software/release/16-6/configuration_guide/stck_mgr_ha/b_166_nsf_sso_9400_cg.html))*
+- SSO standby "starts up in a **fully-initialized state** and synchronizes with the persistent
+  configuration and the running configuration," plus protocol state for **SSO-aware** features.
+  Only SSO is documented for this platform — **RPR/RPR+ are legacy** (Catalyst 4500/6500 era).
+- "**NSF always runs with SSO**, and provides redundancy for Layer 3 traffic." Without NSF,
+  "Layer 3 forwarding is delayed until routing tables are repopulated."
+- Cisco's own definitions: **NSF-capable** = "configured to support NSF" (the restarting box);
+  **NSF-aware** = "running NSF-compatible software" (the helper neighbor). These are the old
+  names for SSO/NSF-capable and GR-aware in the table below.
+- **Restrictions:** NSF is **IPv4 routing protocols only** (BGP, EIGRP, OSPF); **no IP multicast
+  routing**; both supervisors must run the **same IOS XE image**; BGP and OSPF NSF need
+  **NSF-aware neighbors**.
+- **⚠ "HSRP is not supported with NSF SSO. Do not use HSRP with NSF SSO."** (this platform and
+  release). Check your platform's guide before combining an FHRP with NSF/SSO on the same box.
+
 **SSO and NSF**
 - **SSO** is an *internal* router redundancy feature: it checkpoints (synchronizes /
   mirrors) the **router configuration, line card operation, and Layer 2 protocol state**
@@ -483,6 +498,9 @@ this intentional here?" — never automatically a finding.*
 | `show udld neighbors` | Bidirectional neighbors detected on fiber uplinks; missing entries mean UDLD is not protecting that link |
 | `show ip route summary` | Route count at the core — a large number of specifics from one building block means distribution summarization is missing or broken |
 
+| `show redundancy clients` / `show redundancy counters` | Which features are registered as SSO clients, and sync/switchover counters *(from the Catalyst 9400 guide)* |
+| `show cef state` | CEF/NSF state on the active and standby — confirms the FIB is being checkpointed |
+
 ## Intent Questions
 - Which tier is this device *supposed* to be — access, distribution, core, or a collapsed
   core — and does its configuration match that role (Layer 2 vs Layer 3 boundary,
@@ -544,6 +562,9 @@ this intentional here?" — never automatically a finding.*
   internal NSF feature. Cisco used "NSF" for GR first, and the CLI never caught up.
 - **GR is the only one of the three that talks to neighbors.** SSO/NSF and NSR are
   internal. Enabling GR against a GR-unaware neighbor protects nothing.
+- **HSRP + NSF/SSO on the same box.** Cisco's Catalyst 9400 (16.6) guide says outright: "Do
+  not use HSRP with NSF SSO." Don't assume system-level and network-level HA can simply be
+  stacked on one device. Verify against the platform guide.
 - **RPR vs SSO in a matching question:** "partially initialized until the active fails" =
   **RPR**; "completely initialized and synchronized with the primary" = **SSO**. RPR reloads
   every module and takes minutes; SSO takes seconds.
