@@ -155,9 +155,11 @@ chapter to capture them from — they are noted here rather than tracked as outs
 
 ## Roadmap — ENARSI exam domains
 
-**Status: just started.** Source: the ENARSI (300-410) Official Cert Guide — 23 technical
-chapters, plus Ch. 24 (Final Preparation) and Ch. 25 (Exam Updates). Tracked against Cisco's
-**ENARSI v1.1 blueprint** (checked 2026-09-29; Cisco's exam page still lists v1.1). Skills land
+**Status: just started.** Source: *CCNP Enterprise Advanced Routing ENARSI 300-410 Official
+Cert Guide*, **2nd edition** (Lacoste & Edgeworth, 2024) — 23 technical chapters, plus Ch. 24
+(Final Preparation) and Ch. 25 (Exam Updates). The book targets **ENARSI v1.1**, which matches
+Cisco's exam page (checked 2026-09-29). Blueprint numbers below follow the book's own
+**Table I-1** exam-topic → chapter map. Skills land
 in `1.0.0/skills-enarsi/`, one per chapter, generated with `/enarsi-note`.
 
 ENARSI revisits protocols ENCOR already covers, at greater depth and with a troubleshooting
@@ -168,10 +170,10 @@ delta** and cross-references the ENCOR skill for the fundamentals rather than du
 - [ ] **Ch. 1 — IPv4/IPv6 addressing & routing review** — DHCPv4, SLAAC / stateful / stateless
   DHCPv6, packet forwarding, AD, static routes · blueprint 1.1, 4.4 · ↔ `ip-routing-essentials`,
   `ip-services` (DHCP client / PPPoE note moves here)
-- [ ] **Ch. 2 — EIGRP** — classic vs named mode, path metric calculation · 1.9 · ↔ `eigrp`
+- [ ] **Ch. 2 — EIGRP** — classic vs named mode, path metric calculation · 1.9.a–b, 1.9.e–f (load balancing, metrics) · ↔ `eigrp`
 - [ ] **Ch. 3 — Advanced EIGRP** — timers & failure detection, summarization, WAN (stubs),
-  route manipulation · 1.9.d–f, 1.5
-- [ ] **Ch. 4 — Troubleshooting EIGRP for IPv4** — adjacencies, routes, trouble tickets · 1.9
+  route manipulation · 1.9.a, 1.9.c, 1.5
+- [ ] **Ch. 4 — Troubleshooting EIGRP for IPv4** — adjacencies, routes, trouble tickets · 1.9, 1.9.c–d (stubs), 1.5
 - [ ] **Ch. 5 — EIGRPv6 & named EIGRP troubleshooting** · 1.9.a
 - [ ] **Ch. 6 — OSPF** — DR/BDR, network types, failure detection, authentication · 1.10 · ↔ `ospf`
 - [ ] **Ch. 7 — Advanced OSPF** — LSAs, stubby areas, path selection, summarization,
@@ -185,9 +187,10 @@ delta** and cross-references the ENCOR skill for the fundamentals rather than du
 - [ ] **Ch. 13 — BGP path selection** — best path, multipath · 1.11.c · ↔ `bgp-advanced`
 - [ ] **Ch. 14 — Troubleshooting BGP** — neighbors, routes, path selection, IPv6, trouble tickets · 1.11
 - [ ] **Ch. 15 — Route maps & conditional forwarding** — conditional matching, route maps, PBR ·
-  1.2, 1.6 · ↔ `ip-routing-essentials` (PBR)
-- [ ] **Ch. 16 — Route redistribution** — protocol-specific configuration · 1.4, 1.3
-- [ ] **Ch. 17 — Troubleshooting redistribution** — IPv4/IPv6, trouble tickets · 1.4, 1.3, 1.5
+  1.6 · ↔ `ip-routing-essentials` (PBR)
+- [ ] **Ch. 16 — Route redistribution** — protocol-specific configuration · 1.4
+- [ ] **Ch. 17 — Troubleshooting redistribution** — IPv4/IPv6, trouble tickets · 1.2 (route maps), 1.3 (loop
+  prevention), 1.4
 
 ### 2. VPN Technologies (20%)
 - [ ] **Ch. 18 — VRF, MPLS & MPLS L3 VPNs** — VRF-Lite, MPLS operations, FEC, L3VPN · 1.7, 2.1, 2.2
@@ -198,26 +201,30 @@ delta** and cross-references the ENCOR skill for the fundamentals rather than du
   ↔ `overlay-tunnels`
 
 ### 3. Infrastructure Security (20%)
-- [ ] **Ch. 21 — Troubleshooting ACLs & prefix lists** — IPv4/IPv6 ACLs, prefix lists · 3.2.a–b, 1.2
+- [ ] **Ch. 21 — Troubleshooting ACLs & prefix lists** — IPv4/IPv6 ACLs, prefix lists · 3.2.a–b
 - [ ] **Ch. 22 — Infrastructure security** — AAA, uRPF, CoPP, IPv6 first-hop security ·
   3.1, 3.2.c, 3.3, 3.4 · ↔ `network-device-access-control`
 
 ### 4. Infrastructure Services (25%)
 - [ ] **Ch. 23 — Device management & management tools troubleshooting** — console/VTY,
-  Telnet/SSH/HTTP(S)/SCP/(T)FTP, SNMP, logging & debugs, IP SLA, NetFlow, DNA Center assurance ·
-  4.1–4.3, 4.5–4.7 · ↔ `network-assurance`, `automation-tools`
+  Telnet/SSH/HTTP(S)/SCP/(T)FTP, SNMP, logging & debugs, IP SLA & object tracking, NetFlow,
+  **BFD**, DNA Center assurance · 1.8, 4.1–4.3, 4.5–4.7 · ↔ `network-assurance`, `automation-tools`
 - DHCP (4.4) is captured in Ch. 1 above.
 
 ### Not a skill
 - **Ch. 24 — Final Preparation** — exam-day advice, no technical content.
-- **Ch. 25 — Exam Updates** — read before booking the exam; fold any new technical content into
-  the matching chapter skill.
+- **Ch. 25 — Exam Updates** — the printed version (June 2023) has no updates. Before booking the
+  exam, check the companion site (ciscopress.com/register) for a newer PDF and fold any new
+  technical content into the matching chapter skill.
 
-### Blueprint items with no standalone chapter
-- **1.8 Describe BFD** — no BFD chapter in the table of contents. Expect it inside the
-  failure-detection sections (Ch. 3, 6, 19); confirm while reading and note where it lands.
-- **1.3 Loop prevention** (filtering, tagging, split horizon, route poisoning) — spread across
-  EIGRP and redistribution chapters rather than one place.
+### Notes from the book's Table I-1
+- **1.8 BFD lives in Ch. 23** (Device Management and Management Tools), not in the routing
+  chapters' failure-detection sections.
+- **1.2 route maps and 1.3 loop prevention map to Ch. 17** (troubleshooting redistribution), even
+  though Ch. 15 teaches route maps.
+- **1.5 summarization** is spread across Ch. 3, 4, 5, 7, 8, 9, 10 and 12.
+- **Likely typo in the book:** Table I-1 maps BGP items 1.11.a, 1.11.b and 1.11.d to **Ch. 10**
+  (OSPFv3 troubleshooting). The BGP chapters are 11–14; treat those as Ch. 11.
 
 ## Repo layout
 
