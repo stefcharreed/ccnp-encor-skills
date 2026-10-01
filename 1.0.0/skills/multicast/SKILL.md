@@ -4,7 +4,10 @@ description: >
   Use this skill when troubleshooting or configuring multicast on IOS-XE.
   Invoke when the user asks about: IP multicast, IGMP, IGMPv2, IGMPv3, IGMP
   snooping, PIM, PIM dense mode, PIM sparse mode, rendezvous point, RP,
-  Auto-RP, BSR, RPF, (S,G), (*,G), multicast distribution trees.
+  Auto-RP, BSR, RPF, (S,G), (*,G), multicast distribution trees, PIM
+  sparse-dense mode, ip pim sparse-dense-mode, autorp listener, dense fallback,
+  PIM modes comparison, which PIM mode requires an RP, physical RP, phantom RP,
+  pull model, push model, bidir-PIM, PIM-SSM.
 ---
 
 ## Purpose
@@ -73,6 +76,31 @@ receivers are.
   PIM-DM/PIM-SM are jointly called any-source multicast (ASM). All PIM
   control messages use IP protocol 103, multicast to 224.0.0.13 with TTL 1
   (except register/register-stop, which are unicast).
+- **Which PIM modes need an RP — and does it have to be a real router?**
+
+| Mode | Model | Tree | RP? | Must the RP be a physical router? | Exam hook |
+|---|---|---|---|---|---|
+| **PIM-DM** | **Push** — flood, then prune | Source (S,G) only | **No** | — | Floods every ~3 min (prune expiry); legacy/lab only |
+| **PIM-SM** | **Pull** — explicit join | Shared (*,G) via RP, then SPT switchover to (S,G) | **Yes, mandatory** | **Yes** — the RP must **decapsulate unicast register messages** from FHRs and root the shared tree, so the address must live on a real router | "Requires a physical RP" = **PIM-SM** |
+| **Sparse-dense** | Per group | Depends on group | **Only for groups that have one** | For the sparse groups, yes | Sparse if an RP is known for the group, **dense if not** |
+| **PIM-SSM** | Pull, source-named (S,G) | Source tree only — **no shared tree** | **No** — no Auto-RP, BSR or MSDP needed | — | 232.0.0.0/8 + **IGMPv3**; one-to-many |
+| **Bidir-PIM** | Pull, many-to-many | **One bidirectional shared tree**, no (S,G) | **Needs an RP *address* (RPA)** | **No** — **phantom RP**: any unassigned, reachable address on a subnet. No registers are sent, so nothing has to decapsulate | DF per link forwards **toward the RPA**; covered in depth in `encor-v1-2-gap` |
+
+  *Correction to a common practice-exam phrasing:* bidir DFs forward source traffic **upstream
+  toward the RP address**; receivers get it back **down** the shared tree. DFs do not send
+  traffic "directly to receivers".
+- **Sparse-dense mode (`ip pim sparse-dense-mode`):** the mode is chosen **per group**:
+  sparse if the router knows an RP for that group, **dense if it does not**. It exists so
+  **Auto-RP** can work: the Auto-RP groups 224.0.1.39/224.0.1.40 have no RP, so they flood in
+  dense mode and deliver RP mappings to everyone. **The risk is dense fallback:** if the RP is
+  lost, *every* group silently falls back to flooding. The modern alternative is sparse mode
+  plus **`ip pim autorp listener`**, which floods only the two Auto-RP groups in dense mode.
+- **DM fallback is on by default — even on plain sparse-mode interfaces.** A group with no
+  RP information falls back to dense mode "regardless of the interface mode configuration."
+  Disable it with **`no ip pim dm-fallback`**; when you do, sparse-dense interfaces need
+  `ip pim autorp listener` for Auto-RP to keep working. (The listener is meaningless on a
+  sparse-dense interface, which can already flood the Auto-RP groups.)
+  *Source: [Cisco IP Multicast: PIM Configuration Guide — AutoRP Enhancement](https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/ipmulti_pim/configuration/imc-pim-xe-3e/imc_autorp.html)*
 - **PIM-DM flood-and-prune:** assumes receivers on every subnet. Floods
   traffic everywhere first (including non-RPF interfaces — packets arriving
   non-RPF are discarded), then routers with no interested downstream
@@ -243,6 +271,11 @@ A deviation from this table is a question ("is this intentional here?"), never a
   are genuinely on every subnet (rare).
 - Forgetting that PIM-SM is mandatory-RP — no RP configured (static,
   Auto-RP, or BSR) means PIM-SM simply doesn't work, unlike PIM-DM.
+- Saying bidir-PIM "needs no RP." It needs an RP **address**, just not a physical
+  RP router — the phantom-RP design. PIM-SM is the mode that needs a **physical** RP,
+  because the RP must decapsulate register messages.
+- Leaving `ip pim sparse-dense-mode` in production — losing the RP makes every group
+  fall back to dense flood-and-prune. Prefer sparse mode + `ip pim autorp listener`.
 - Running Auto-RP and BSR simultaneously in the same PIM domain — they
   weren't designed to interoperate and will conflict.
 - Forgetting `ip igmp version 3` on receiver-facing interfaces when SSM is
