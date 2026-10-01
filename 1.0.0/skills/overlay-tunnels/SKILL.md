@@ -11,7 +11,9 @@ description: >
   perfect forward secrecy, pre-shared key, VTI, virtual tunnel interface,
   DMVPN, GET VPN, FlexVPN, show crypto isakmp sa, show crypto ipsec sa, LISP,
   EID, RLOC, ITR, ETR, xTR, PITR, PETR, map server, map resolver, map cache,
-  map request, negative map reply, VXLAN, VNI, VTEP, MAC-in-IP, SD-Access.
+  map request, negative map reply, VXLAN, VNI, VTEP, MAC-in-IP, SD-Access,
+  MSS, maximum segment size, ip tcp mss, ip tcp adjust-mss, MSS 536, MSS 1460,
+  IP fragmentation, path MTU discovery.
 ---
 
 ## Purpose
@@ -49,6 +51,33 @@ that scales.
   tunnel tears itself down and flaps (`%TUN-5-RECURDOWN`). The fix is to make
   sure the tunnel destination is reachable via the underlay only — never
   advertise the tunnel endpoints into the overlay routing protocol.
+
+### MTU and MSS — router-originated vs transit traffic
+- **MTU** is the largest IP packet an interface sends (1500 on Ethernet). **MSS** is
+  the largest TCP *payload* a host will accept, announced in the SYN during the
+  3-way handshake: normally MTU − 20 (IP) − 20 (TCP) = **1460**.
+- Lowering MSS makes TCP send smaller segments, so packets fit a smaller-MTU path
+  (a tunnel) **without fragmenting**. MSS is a TCP option — **UDP is unaffected**.
+- Two commands, and the exam tests which traffic each one touches:
+
+| | `ip tcp mss <bytes>` | `ip tcp adjust-mss <bytes>` |
+|---|---|---|
+| Mode | **Global** config | **Interface** config (e.g. `interface Tunnel100`) |
+| Affects | TCP sessions **originating from or terminating on the router itself** — SSH/Telnet to the box, BGP, TACACS+ | TCP sessions **forwarded through** that interface — the router rewrites the MSS in transiting SYNs |
+| Range | **68–10000** | **500–1460** (IPv6 `ipv6 tcp adjust-mss`: 40–1940) |
+| Default | Disabled → **536** if the destination is not on a LAN, **1460** for a local destination | Disabled — transit SYNs pass unchanged |
+
+- **Why 536:** every IPv4 host must accept a 576-byte datagram; 576 − 20 − 20 = 536.
+  It is the conservative "fits any path" value for a **remote** destination.
+- For router-originated connections the configured value is placed directly in the
+  router's SYN. For connections **terminating** on the router, it is used only if
+  the incoming SYN advertises a *higher* MSS.
+- `ip tcp mss` interacts with `ip tcp path-mtu-discovery` (not with
+  `ip tcp header-compression`).
+- A firewall that **strips TCP options** removes the MSS option, so a configured
+  MSS has no effect on that path.
+
+*Source: [Cisco IOS IP Application Services Command Reference — ip tcp mss / ip tcp adjust-mss](https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/ipapp/command/iap-cr-book/iap-i2.html#wp2037591029)*
 
 ### IPsec fundamentals
 - IPsec is a framework, not one protocol. It provides four security services:
@@ -521,6 +550,8 @@ peer address). Stuck in `MM_KEY_EXCH` = DH finished but authentication is failin
 | Apply an IPsec profile to a tunnel interface | `tunnel protection ipsec profile <profile-name>` |
 | Turn a GRE tunnel into a VTI tunnel | `tunnel mode ipsec {ipv4 \| ipv6}` |
 | Turn a VTI tunnel into a GRE tunnel | `tunnel mode gre {ip \| ipv6}` |
+| Set MSS for TCP sessions the router itself originates/terminates (global, 68–10000) | `ip tcp mss <bytes>` |
+| Rewrite MSS in transit TCP SYNs on an interface (500–1460) | `ip tcp adjust-mss <bytes>` |
 | Display information about ISAKMP SAs | `show crypto isakmp sa` |
 | Display detailed information about IPsec SAs | `show crypto ipsec sa` |
 
@@ -747,6 +778,11 @@ this intentional here?" — never automatically a finding.*
 - **Forgetting that only the lifetime may differ in a phase 1 proposal.**
   Engineers often assume the peers will negotiate to a common denominator;
   every other parameter must match exactly.
+- **Using `ip tcp adjust-mss` for the router's own traffic, or `ip tcp mss` for
+  transit traffic.** "Originating from the router" = global `ip tcp mss`;
+  "hosts behind / traffic through the router" = interface `ip tcp adjust-mss`.
+  And to *mitigate* fragmentation toward a remote network, 1460 is the wrong
+  answer — it produces full 1500-byte packets; 536 is the safe value.
 - **Ignoring MTU until it manifests as an application problem.** Ping works,
   SSH works, but file transfers and TLS handshakes hang — that is fragmentation,
   not a "flaky tunnel."
