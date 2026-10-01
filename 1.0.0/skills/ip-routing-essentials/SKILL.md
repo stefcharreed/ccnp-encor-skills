@@ -2,7 +2,9 @@
 name: ccnp-ip-routing-essentials
 description: >
   Use this skill when troubleshooting or configuring ip-routing-essentials on IOS-XE.
-  Invoke when the user asks about: RIB, FIB, administrative distance, prefix
+  Invoke when the user asks about: RIB, FIB, CEF, Cisco Express Forwarding, FIB vs CEF,
+  adjacency table, glean adjacency, punt adjacency, null adjacency, process switching,
+  fast switching, route cache, dCEF, show ip cef, show adjacency, administrative distance, prefix
   length, ECMP, unequal-cost load balancing, CEF load balancing, CEF
   load sharing, per-packet, per-destination, ip load-sharing, out-of-order
   packets, static route, floating static
@@ -23,6 +25,37 @@ IP routing essentials cover how a router decides which path wins (prefix length,
 - **Path vector** (BGP) evaluates path attributes (AS_Path, MED, origin, next hop, local preference, atomic aggregate, aggregator) rather than a simple distance metric, and guarantees loop-freedom by rejecting any advertisement that already contains the local AS in its AS_Path.
 - Path selection happens in this priority order: **prefix length** (longest match always wins regardless of source) → **administrative distance** (lower AD wins when multiple sources offer the same prefix length) → **metric** (lower wins when AD ties, e.g. two sources from the same protocol).
 - The RIB only ever holds the *single best* route a routing process submits per prefix; if a lower-AD route is later removed, the RIB asks the other process(es) that lost the AD comparison to resubmit their route — meaning the lowest-AD route in absolute terms isn't always what gets submitted (e.g. BGP may submit an iBGP path at AD 200 instead of an available eBGP path at AD 20, because BGP's own best-path algorithm decided it first).
+- **FIB vs CEF: CEF is the switching method, and the FIB is one of its two tables.** Cisco: "The
+  two main components of Cisco Express Forwarding operation are the **forwarding information
+  base (FIB)** and the **adjacency tables**." So the question isn't FIB *or* CEF. The FIB is
+  *part of* CEF.
+  - **FIB** = reachability. "The FIB contains the prefixes from the IP routing table structured in
+    a way that is optimized for forwarding." It is "conceptually similar to a routing table" and
+    "maintains a **mirror image** of the forwarding information in an IP routing table." There
+    is a **one-to-one correlation** between FIB entries and RIB entries, and RIB changes are
+    reflected in the FIB.
+  - **Adjacency table** = the Layer 2 rewrite. "A node is said to be adjacent to another node if
+    the node can be reached with a single hop across a link layer." The table stores the
+    **outbound interface and MAC header rewrite** for each adjacent node, and "maintain[s] Layer 2
+    next-hop addresses for all FIB entries." It is populated dynamically, e.g. by **ARP**. Each
+    time an adjacency is created, the link-layer header is **pre-computed and stored**.
+  - **Why split them:** the FIB doesn't store the MAC rewrite. It *points to* the adjacency
+    entry. So both tables are **pre-built from the RIB and ARP before any packet arrives**: no
+    packet is process-switched to build an entry, an ARP change doesn't invalidate the FIB, and
+    recursive routes resolve by pointing straight at the adjacency.
+  - **Where CEF sits among the switching paths:** **process switching** = an IOS process
+    forwards each packet from the RIB + ARP cache (slowest, every packet hits the CPU).
+    **Fast switching** = the *first* packet is process-switched to build a **route cache**
+    entry, then later packets use the cache. The cache is demand-built, ages out (1/20th
+    invalidated randomly every minute), and must be partly invalidated whenever ARP changes.
+    **CEF** = the FIB contains *all* known routes, so there is "no route cache maintenance"
+    and nothing is built on demand.
+  - **Central vs distributed CEF:** in central CEF, the FIB and adjacency tables live on the
+    **RP** and the RP forwards. In **dCEF**, "line cards maintain **identical copies** of the FIB
+    and adjacency tables" (kept in sync over IPC) and forward without the RP. That copy is
+    what lets NSF keep forwarding through an RP switchover (see `enterprise-network-architecture`).
+  - *Sources: [CEF Overview, IP Switching CEF Configuration Guide (IOS XE 16)](https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/ipswitch_cef/configuration/xe-16/isw-cef-xe-16-book/isw-cef-overview.html);
+    [How to Choose the Best Router Switching Path for Your Network](https://www.cisco.com/c/en/us/support/docs/ip/express-forwarding-cef/13706-20.html).*
 - **ECMP** (equal-cost multipathing): when a protocol has multiple equal-metric paths and supports it, all are installed and traffic load-shares evenly. **Unequal-cost load balancing**: EIGRP-only, not default-enabled, installs multiple different-metric paths and ratios traffic proportional to each path's metric (lower metric gets more traffic share).
 - **⚠ CEF LOAD BALANCING — PER-DESTINATION vs PER-PACKET (high-yield exam trap).** Once
   ECMP installs several paths, **CEF** decides how packets are spread across them. The
@@ -98,6 +131,33 @@ Default administrative distances by route source:
 | EIGRP (external) route | 170 |
 | Internal BGP (iBGP) route | 200 |
 
+**RIB → FIB → adjacency: who builds what** *(Cisco CEF Overview)*
+
+| Table | Built from | Holds | Show command |
+|---|---|---|---|
+| RIB (routing table) | Connected, static, routing protocols | Best route per prefix | `show ip route` |
+| FIB (CEF table) | The RIB, one-to-one | Prefix → next hop, optimized for lookup | `show ip cef` |
+| Adjacency table | ARP (or routing protocol neighbors / manual config) | Next hop → outbound interface + pre-built MAC rewrite | `show adjacency [detail]` |
+
+**Switching paths compared** *(Cisco "How to Choose the Best Router Switching Path")*
+
+| Path | How a forwarding entry is built | Weakness |
+|---|---|---|
+| Process switching | Never cached. Every packet is looked up in the RIB + ARP cache by an IOS process | Every packet costs CPU |
+| Fast switching | First packet process-switched, result stored in a **route cache** (binary tree) | Cache ages out, is invalidated by ARP changes, can't resolve recursion in-cache |
+| Optimum switching | Same as fast, but a 256-way mtree (at most 4 lookups) | Still cache aging and invalidation |
+| **CEF** | **Pre-built** FIB (256-way trie) + separate adjacency table, from the RIB and ARP | None of the above. No packet is process-switched to build an entry |
+
+**Special adjacency types** *(Cisco CEF Overview, Table 1, and the switching-path doc)*
+
+| Adjacency | What the device does |
+|---|---|
+| **Glean** | Next hop is directly connected, but **no MAC rewrite yet**. The FIB holds the subnet prefix and points to glean; CEF triggers ARP and then builds the host adjacency |
+| **Punt** | Packet needs special handling or a feature CEF doesn't support, so it is **sent to the next higher switching level** (e.g. the CPU) |
+| **Null** | Destined to **Null0**, so it is dropped. Usable as access filtering |
+| **Drop** / **Discard** | The packet is dropped / discarded |
+| **Receive** | Destined to the router itself (its own addresses, broadcasts) |
+
 **CEF load balancing — per-destination vs per-packet**
 
 | | Per-destination (default) | Per-packet |
@@ -167,6 +227,8 @@ A deviation from this table is a question ("is this intentional here?"), never a
 | `show ip arp` / `show ip arp <ip>` | IP→MAC bindings and age. **`Incomplete` means ARP was attempted and nobody answered** — the host is absent, off, or on the wrong VLAN |
 | `show ip interface <id> \| include Proxy` | Whether proxy ARP is enabled — check this before concluding a host's mask is correct |
 | `show arp timeout` / `show ip interface <id>` | ARP cache timeout (default 4hr) — compare against the switch's 300s MAC aging when diagnosing sustained unicast flooding |
+| `show ip cef` / `show ip cef <prefix>` | The FIB itself: prefix, next hop, outbound interface. A route in `show ip route` but missing here is not being forwarded by CEF |
+| `show adjacency detail` | The adjacency table: per next hop, the outbound interface and the pre-built MAC rewrite string. An entry stuck as glean/incomplete means ARP never resolved |
 | `show ip cef <prefix> internal` | The CEF entry's load-sharing paths and hash buckets for the prefix: confirms ECMP made it into the FIB, not just the RIB |
 | `show ip cef exact-route <src-ip> <dst-ip>` | The single path CEF picks for that source/destination pair. Under per-destination it is the same every time, which is how you prove a flow sticks to one link |
 
@@ -188,6 +250,8 @@ A deviation from this table is a question ("is this intentional here?"), never a
 8. Software/platform bug (rare) — only after prefix/AD/metric logic, static route type, PBR route-map, and VRF assignment are all confirmed correct.
 
 ## Common Pitfalls
+- **Treating FIB and CEF as competing answers.** CEF is the *switching method*; the FIB and the adjacency table are the *two tables it uses*. FIB is built from the RIB, adjacency from ARP. "Which two tables does CEF use?" = FIB + adjacency, never "FIB + RIB."
+- **Assuming the route cache still exists under CEF.** Demand-built caches, aging, and first-packet process switching belong to fast switching. CEF pre-builds everything from the RIB and ARP.
 - Forgetting that PBR does not modify or appear in the RIB at all — `show ip route` is the wrong tool for verifying PBR behavior; use `traceroute`/`ping` with the relevant source, or PBR-specific route-map hit counters.
 - Using a directly attached static route on an Ethernet (ARP) interface — forces a fresh ARP lookup for every destination matching the route, unlike serial/point-to-point links where this pattern is safe.
 - Trying to resolve a recursive static route's next hop purely via a default route entry — recursive statics explicitly cannot use 0.0.0.0/0 as their resolving route and will fail to install.
