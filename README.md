@@ -138,7 +138,7 @@ captured from official Cisco docs in:
 - [x] [OSPF](1.0.0/skills/ospf/SKILL.md) — LSDB, SPF, DR/BDR election, network types, neighbor adjacency
 - [x] [Advanced OSPF](1.0.0/skills/advanced-ospf/SKILL.md) — multi-area design, ABRs, LSA types 1-7, discontiguous networks, summarization, route filtering
 - [x] [OSPFv3](1.0.0/skills/ospfv3/SKILL.md) — OSPF for IPv6, link-local adjacencies, link/intra-area prefix LSAs, IPv4 support
-- [x] [IS-IS Authentication](1.0.0/skills/is-is/SKILL.md) — *(no standalone OCG chapter; SD-Access underlay IGP, tested in practice exams)* interface/area/domain authentication (`isis password`, `area-password`, `domain-password`), which PDUs each protects, mismatch behavior, HMAC-MD5 key chains, send-only migration
+- [x] [IS-IS](1.0.0/skills/is-is/SKILL.md) — *(no standalone OCG chapter; SD-Access underlay IGP, tested in practice exams)* NET/system ID/areas, L1/L2/L1-L2 adjacency matrix, is-type vs circuit-type, DIS, hello padding & MTU mismatch (INIT/ES-IS), metric-style narrow/wide/transition, ATT bit & L2→L1 route leaking, LDP-IGP sync, interface/area/domain authentication & HMAC-MD5, troubleshooting ordered by a field sample of real failures
 - [x] [BGP](1.0.0/skills/bgp/SKILL.md) — eBGP/iBGP, path attributes, AS_Path loop prevention, route summarization, MP-BGP for IPv6
 - [x] [Advanced BGP](1.0.0/skills/bgp-advanced/SKILL.md) — multihoming, transit AS avoidance, route maps, AS_Path filtering, BGP communities, best-path selection
 - [x] [Multicast](1.0.0/skills/multicast/SKILL.md) — IGMP, IGMP snooping, PIM dense/sparse mode, RPF, rendezvous points, Auto-RP, BSR
