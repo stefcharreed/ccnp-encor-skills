@@ -7,7 +7,7 @@ description: >
   tools, configuration management, config management tool comparison, agent-based,
   agentless, push model, pull model, EEM, Embedded Event Manager, EEM applet, event
   manager applet, event detector, EEM event detectors, syslog event detector, CLI event
-  detector, event none, event syslog pattern, event cli pattern, sync yes, action cli
+  detector, event none, event syslog pattern, event cli pattern, sync yes, sync no, skip yes, skip no, _exit_status, action cli
   command, action syslog msg, action mail, action policy, event manager environment, event manager run,
   event manager session cli username, _email_server, _email_to, _email_from, _email_cc,
   $_cli_result, file prompt quiet, debug event manager, debug event manager all, debug
@@ -72,6 +72,25 @@ and what each one calls its own parts.
 - **CLI patterns can also be matched as an event.** When certain commands are entered into the
   router at the CLI, they can trigger an EEM event — the chapter's example matches
   `"write mem.*"` and backs the config up to TFTP as a result.
+- **`sync` decides whether the applet can block the typed command.** The pattern
+  (`"show ip interface brief"`, `"write mem.*"`) is only the trigger. It checks nothing.
+  - **`sync yes`**: the command is **held**. The parser doesn't get it until the applet
+    finishes. EEM then reads **`_exit_status`**: **`1` = run the command, `0` = drop it**
+    (no output, prompt returns). This is the **only** mode where `_exit_status` is checked.
+  - **`sync no`**: the applet and the command run **at the same time**. The applet's verdict
+    would arrive too late, so `_exit_status` is ignored. **`skip yes`** always drops the
+    command and **`skip no`** always runs it. `skip` is fixed in config, not decided by the applet.
+  - **Firewall analogy:** `sync yes` = an **inline** firewall (traffic is held for a
+    permit/deny verdict). `sync no` = a **SPAN/TAP** copy (it can log and alert but can't block).
+  ```
+  event manager applet BLOCK-RELOAD
+   event cli pattern "^reload" sync yes
+   action 1.0 syslog msg "Reload attempted, blocked"
+   action 2.0 set _exit_status 0      ! 0 = skip the command; 1 = let it run
+  ```
+  **Exam wording (Boson):** "Which command causes EEM to check `_exit_status` after the applet
+  finishes?" The answer is `event cli pattern "..." sync yes`. `set 1 _exit_status 0/1` is the
+  trap: it *sets* the variable, but nothing reads it without `sync yes`. *(Not yet lab-verified.)*
 - **`event none`** means the applet has **no event detector of its own**. It never
   self-triggers, but it can still run **two ways**:
   1. **Manually:** **`event manager run applet-name`** (a **privileged EXEC** command,
@@ -931,6 +950,9 @@ Rows traced to the ENCOR 350-401 OCG Chapter 29 with page numbers. Two rows are 
   <name>` or another applet's `action <label> policy <name>`. An applet that "never fires"
   may be working exactly as configured. On an exam, pick **"manually or when triggered by an
   event"** over "only manually".
+- **`set _exit_status 0` does nothing without `sync yes`.** With `sync no`, the `skip`
+  keyword has already decided the command's fate. An applet meant to block a command must
+  use `sync yes` and set `_exit_status 0`.
 - **`file prompt quiet` is a global setting the applet must restore.** The chapter's backup
   applet turns it off again in action 7.0 for a reason.
 - **`debug event manager all` and `debug event manager action mail` are different tools.** Use
