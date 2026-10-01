@@ -114,7 +114,8 @@ chapter to capture them from — they are noted here rather than tracked as outs
 **added** multicast SSM/bidir/MSDP and Catalyst Center AI-powered workflows. Those additions are
 captured from official Cisco docs in:
 
-- [x] [ENCOR v1.2 gap](1.0.0/skills/encor-v1-2-gap/SKILL.md) — v1.1→v1.2 blueprint diff, MSDP, bidir-PIM, SSM & SSM mapping, Catalyst Center AI (AI Network Analytics, AI Endpoint Analytics, AI Assistant), Catalyst renames
+- [x] [ENCOR v1.2 gap](1.0.0/skills/encor-v1-2-gap/SKILL.md) — v1.1→v1.2 blueprint diff (verified line-by-line), MSDP, Anycast RP & RP-mechanism comparison, bidir-PIM, SSM & SSM mapping, Catalyst Center AI (AI Network Analytics, AI Endpoint Analytics, Machine Reasoning Engine, AI Assistant), Catalyst renames, and a sample of what v1.2 test-takers report
+- 📊 **[ENCOR v1.2 chapter weights](ENCOR-v1.2-CHAPTER-WEIGHTS.md)** — every OCG chapter weighted against the v1.2 blueprint (sums to 100%) with priority tiers; chapters 22–29 carry ~57% of the weight
 
 ### 1. Architecture (15%)
 - [x] [Enterprise Network Architecture](1.0.0/skills/enterprise-network-architecture/SKILL.md) — hierarchical LAN design (access/distribution/core), network blocks & PINs, HA design, SSO/NSF with GR and NSR, two-tier vs three-tier, Layer 2 vs routed access, simplified campus design (VSS/SWV/StackWise)
