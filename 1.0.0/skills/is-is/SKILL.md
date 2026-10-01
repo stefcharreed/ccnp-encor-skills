@@ -21,6 +21,10 @@ state each router will accept — and its failures split cleanly into "no adjace
 > **Blueprint note — low ENCOR priority (verified 2026-10-01):** IS-IS is **not on the
 > ENCOR v1.2 blueprint**. Section **3.2 Layer 3** lists only EIGRP-vs-OSPF concepts,
 > OSPFv2/v3, eBGP and PBR ([Cisco ENCOR v1.2 exam topics](https://learningcontent.cisco.com/documents/marketing/exam-topics/350-401-ENCORE-v1.2.pdf)).
+> **Nor is it on ENARSI v1.1 (300-410)**, whose routing sections cover EIGRP, OSPF and BGP
+> ([Cisco ENARSI v1.1 exam topics](https://learningcontent.cisco.com/documents/marketing/exam-topics/300-410-ENARSI-v1.1.pdf)) —
+> though its "troubleshoot administrative distance (all routing protocols)" and "redistribution
+> between any routing protocols" items could touch IS-IS incidentally (AD **115**).
 > IS-IS appears only indirectly as the **SD-Access underlay** (blueprint 1.3, a *describe*-level
 > topic — see `fabric-technologies`), and some practice-exam banks still test it under the
 > blueprint's "other related topics may also appear" clause. **Study priority for ENCOR: know
