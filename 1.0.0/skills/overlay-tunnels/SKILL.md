@@ -7,7 +7,7 @@ description: >
   destination, recursive routing, tunnel MTU, IPsec, AH, ESP, transport mode,
   tunnel mode, transform set, crypto map, IPsec profile, tunnel protection,
   ISAKMP, IKE, IKEv1, IKEv2, main mode, aggressive mode, quick mode, MM1,
-  QM_IDLE, SA_INIT, IKE_AUTH, CREATE_CHILD_SA, Diffie-Hellman group, PFS,
+  QM_IDLE, MM_NO_STATE, MM_SA_SETUP, MM_KEY_EXCH, MM_KEY_AUTH, AG_NO_STATE, AG_INIT_EXCH, AG_AUTH, ISAKMP SA states, SA_INIT, IKE_AUTH, CREATE_CHILD_SA, Diffie-Hellman group, PFS,
   perfect forward secrecy, pre-shared key, VTI, virtual tunnel interface,
   DMVPN, GET VPN, FlexVPN, show crypto isakmp sa, show crypto ipsec sa, LISP,
   EID, RLOC, ITR, ETR, xTR, PITR, PETR, map server, map resolver, map cache,
@@ -382,6 +382,32 @@ forwarding rules apply.
 | Data integrity | Hashing algorithms | MD5, SHA |
 | Peer authentication | PSK or digital signatures | Pre-shared key, RSA signatures/digital certificates |
 | Anti-replay | Sequence numbers | Sequence numbering in the SA |
+
+**ISAKMP SA states in `show crypto isakmp sa`** *([Cisco IOS Security Command Reference, show crypto isakmp sa](https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/security/s1/sec-s1-cr-book/sec-cr-s3.html), Tables 28–30)*
+
+A healthy ISAKMP SA "will most likely be in its quiescent state (QM_IDLE). For long exchanges,
+some of the main mode (MM_xxx) states may be observed."
+
+| Order | State | Cisco's explanation | Main mode messages |
+|---|---|---|---|
+| 1 | `MM_NO_STATE` | The ISAKMP SA has been created, but nothing else has happened yet. It is "larval": there is no state | Before or during MM1–MM2 |
+| 2 | `MM_SA_SETUP` | The peers have agreed on parameters for the ISAKMP SA | After MM1–MM2 (proposal matched) |
+| 3 | `MM_KEY_EXCH` | The peers have exchanged DH public keys and generated a shared secret. The ISAKMP SA **remains unauthenticated** | After MM3–MM4 |
+| 4 | `MM_KEY_AUTH` | The ISAKMP SA has been authenticated. If this router initiated, it transitions immediately to `QM_IDLE` and quick mode begins | After MM5–MM6 |
+| 5 | `QM_IDLE` | The ISAKMP SA is idle. It remains authenticated with its peer and can be used for later quick mode exchanges. Quiescent state | Phase 1 done |
+
+Aggressive mode uses its own states: `AG_NO_STATE` (larval, no state) → `AG_INIT_EXCH` (first
+exchange done, **not authenticated**) → `AG_AUTH` (authenticated, the initiator goes straight to
+`QM_IDLE`).
+
+**Exam memory hook:** NO_STATE → SA_SETUP → KEY_EXCH → KEY_AUTH → QM_IDLE, which follows the
+main mode exchange: **agree on proposals → swap DH keys → authenticate → idle**. `QM_IDLE` is
+the *end of phase 1*, not a phase 2 state, despite the "QM" in the name.
+
+**Where it gets stuck** *(general knowledge, not from the command reference; not yet lab-verified)*:
+stuck in `MM_NO_STATE` = proposals never matched or the peer isn't answering (UDP 500 blocked, wrong
+peer address). Stuck in `MM_KEY_EXCH` = DH finished but authentication is failing, usually a
+**pre-shared key mismatch**.
 
 **AH vs ESP**
 
