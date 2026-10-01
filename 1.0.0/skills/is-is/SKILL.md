@@ -18,11 +18,16 @@ decides which routers become neighbors (levels, areas, MTU, authentication) and 
 state each router will accept — and its failures split cleanly into "no adjacency" and
 "adjacency up but routes missing," which need completely different checks.
 
-> **Blueprint note:** IS-IS has **no standalone ENCOR OCG chapter**. It matters for ENCOR
-> because it is the **SD-Access underlay IGP** (see `fabric-technologies`) and because
-> practice exams test it. Everything here is cited to Cisco documentation, except the
-> clearly labelled **field sample** of Cisco Community threads, which is evidence about what
-> breaks in practice — not documentation.
+> **Blueprint note — low ENCOR priority (verified 2026-10-01):** IS-IS is **not on the
+> ENCOR v1.2 blueprint**. Section **3.2 Layer 3** lists only EIGRP-vs-OSPF concepts,
+> OSPFv2/v3, eBGP and PBR ([Cisco ENCOR v1.2 exam topics](https://learningcontent.cisco.com/documents/marketing/exam-topics/350-401-ENCORE-v1.2.pdf)).
+> IS-IS appears only indirectly as the **SD-Access underlay** (blueprint 1.3, a *describe*-level
+> topic — see `fabric-technologies`), and some practice-exam banks still test it under the
+> blueprint's "other related topics may also appear" clause. **Study priority for ENCOR: know
+> that SD-Access uses IS-IS and the basics below; spend real study time on OSPF, eBGP and
+> multicast instead.** The troubleshooting depth here is for real-world (production) use.
+> Everything is cited to Cisco documentation, except the clearly labelled **field sample** of
+> Cisco Community threads — mostly production engineers, not exam candidates.
 
 ## Key Concepts
 
