@@ -25,6 +25,12 @@ state each router will accept — and its failures split cleanly into "no adjace
 > ([Cisco ENARSI v1.1 exam topics](https://learningcontent.cisco.com/documents/marketing/exam-topics/300-410-ENARSI-v1.1.pdf)) —
 > though its "troubleshoot administrative distance (all routing protocols)" and "redistribution
 > between any routing protocols" items could touch IS-IS incidentally (AD **115**).
+> **CCIE:** the **Enterprise Infrastructure v1.1** lab never names IS-IS — it is only implied
+> by **2.1.a SD-Access underlay (manual / LAN automation)**, since LAN automation builds an IS-IS
+> underlay ([CCIE EI v1.1 topics](https://learningcontent.cisco.com/documents/marketing/exam-topics/CCIE_EI_v1.1_Blue_Print.pdf)).
+> **CCIE Service Provider v5.1 is where IS-IS is core:** 1.1.a IS-IS as an IGP, 1.5.a IS-IS
+> extensions for MPLS TE, 1.6.a IS-IS segment-routing control plane (IPv4/IPv6), plus IGP fast
+> convergence and LFA/TI-LFA ([CCIE SP v5.1 topics](https://learningcontent.cisco.com/documents/marketing/exam-topics/CCIE_Service_Provider_v5.1_Exam_Topics-mor.pdf)).
 > IS-IS appears only indirectly as the **SD-Access underlay** (blueprint 1.3, a *describe*-level
 > topic — see `fabric-technologies`), and some practice-exam banks still test it under the
 > blueprint's "other related topics may also appear" clause. **Study priority for ENCOR: know
