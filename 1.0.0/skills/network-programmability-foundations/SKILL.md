@@ -31,7 +31,8 @@ description: >
   PrettyTable, json module, Python dictionary, key value pair, Python function, def, print
   function, Python string, multiple-line string, triple quotes, three quotation marks,
   Python comment, hash character, condition, if statement, variable, for loop, verify=False,
-  disable_warnings, InsecureRequestWarning.
+  disable_warnings, InsecureRequestWarning, json.dumps, json.loads, json.dump, json.load,
+  JSONEncoder, JSONDecoder, encode, decode, serialize, deserialize.
 ---
 
 ## Purpose
@@ -353,6 +354,42 @@ script and know what it does.
     locations and Cisco offices.
   - **`custom`** — used when **a Cisco DNA Center is already installed** in a lab or another
     facility and needs to be accessed by the script.
+
+**Python's `json` module — converting between Python objects and JSON text**
+- JSON is **text**; a Python dictionary is a **live object in memory**. The `json` module (built
+  in — `import json`, nothing to install) converts between them. REST APIs send and receive the
+  text; your script works on the object.
+
+| Direction | Shortcut function | Class method that does the work | Input → output |
+|---|---|---|---|
+| Python → JSON (**encode / serialize**) | `json.dumps(obj)` | `json.JSONEncoder().encode(obj)` | dict/list → **`str`** |
+| JSON → Python (**decode / deserialize**) | `json.loads(s)` | `json.JSONDecoder().decode(s)` | **`str`** → dict/list |
+
+- **`dumps`/`loads` are wrappers.** Calling `json.dumps()` runs a default `JSONEncoder`'s
+  `.encode()` for you; `json.loads()` runs a `JSONDecoder`'s `.decode()`. **Each pair produces
+  identical output** — the exam treats them as matching answers.
+- **The classes are one-directional:** `JSONEncoder` has **no `.decode()`**, and `JSONDecoder` has
+  **no `.encode()`**. Any answer like `JSONEncoder().decode()` is invalid.
+- **Memory trick:** the **s** in `dumps`/`loads` means **string**. The versions without the s —
+  `json.dump(obj, f)` and `json.load(f)` — read and write a **file** instead of a string.
+- **`loads` returns whatever the JSON is:** a JSON object `{...}` becomes a `dict`, but a JSON
+  array `[...]` becomes a `list`. "Converts JSON into a dictionary" is only true for objects.
+- Types translate: Python `True`/`False`/`None` ↔ JSON `true`/`false`/`null`.
+
+```python
+import json
+
+device = {"hostname": "R1", "interfaces": ["Gi0/1"], "up": True}
+
+body = json.dumps(device)        # -> '{"hostname": "R1", "interfaces": ["Gi0/1"], "up": true}'  (str)
+same = json.JSONEncoder().encode(device)   # identical string
+
+back = json.loads(body)          # -> {'hostname': 'R1', 'interfaces': ['Gi0/1'], 'up': True}  (dict)
+same = json.JSONDecoder().decode(body)     # identical dict
+
+json.loads('[1, 2]')             # -> [1, 2]  (a list, not a dict)
+```
+*Behavior verified against CPython's `json` module. Source: [Python docs — json: JSON encoder and decoder](https://docs.python.org/3/library/json.html)*
 
 **Securing JSON with JSON Web Tokens (JWT):**
 - **JWT is an IETF open standard defined in RFC 7519.** Its purpose is **secure transmission
@@ -997,6 +1034,9 @@ question for the operator, not automatically a finding.**
   `def` to be a function.
 - **A Python dictionary and a JSON object look identical** — key/value pairs in curly braces.
   That resemblance is useful, but a dictionary is a live Python object and JSON is text.
+- **Mixing up `dumps` and `loads`.** `dumps` = dict → JSON **string** (to send in a request
+  body); `loads` = JSON **string** → dict (to read a response). Pair each with its class:
+  `dumps` ↔ `JSONEncoder().encode()`, `loads` ↔ `JSONDecoder().decode()` — never crossed.
 - **A dictionary written on one line is the same dictionary.** Formatting is not structure.
 - **`verify=False` disables certificate validation**, and `urllib3.disable_warnings()` hides the
   warning that tells you so. The chapter's scripts do both without comment because they target a
