@@ -13,7 +13,9 @@ description: >
   EID, RLOC, ITR, ETR, xTR, PITR, PETR, map server, map resolver, map cache,
   map request, negative map reply, VXLAN, VNI, VTEP, MAC-in-IP, SD-Access,
   MSS, maximum segment size, ip tcp mss, ip tcp adjust-mss, MSS 536, MSS 1460,
-  IP fragmentation, path MTU discovery.
+  IP fragmentation, path MTU discovery, IPv6 tunneling, IPv6 over IPv4,
+  6to4, 2002::/16, tunnel mode ipv6ip, ipv6ip 6to4, ISATAP, 0000:5EFE,
+  IPv4-compatible tunnel, auto-tunnel, manual IPv6 tunnel.
 ---
 
 ## Purpose
@@ -78,6 +80,53 @@ that scales.
   MSS has no effect on that path.
 
 *Source: [Cisco IOS IP Application Services Command Reference — ip tcp mss / ip tcp adjust-mss](https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/ipapp/command/iap-cr-book/iap-i2.html#wp2037591029)*
+
+### IPv6-over-IPv4 overlay tunnels (manual, 6to4, ISATAP)
+- IPv6 is the **passenger**, IPv4 is the **transport** — IPv6 islands talk across
+  an IPv4-only core. Every type is an `interface tunnel`; the **`tunnel mode`**
+  keyword picks the type:
+
+| `tunnel mode …` | Type | Topology | Tunnel destination |
+|---|---|---|---|
+| `ipv6ip` | Manual IPv6 tunnel | Point-to-point | **Configured** |
+| `gre ip` | GRE (carries IPv6 *and* other protocols) | Point-to-point | **Configured** |
+| `ipv6ip 6to4` | 6to4 | Point-to-multipoint | **Automatic** — pulled from the IPv4 bits inside the destination 2002:: address |
+| `ipv6ip isatap` | ISATAP (Intra-Site Automatic Tunnel Addressing Protocol) | Point-to-multipoint | **Automatic** — pulled from the IPv4 bits in the interface ID |
+| `ipv6ip auto-tunnel` | IPv4-compatible | Point-to-multipoint | Automatic — low-order 32 bits. **Cisco no longer recommends it** (doesn't scale) |
+
+- **Trap:** `tunnel mode gre ipv6` is GRE over an **IPv6 transport** (the underlay is
+  IPv6), not IPv6 over IPv4. And **`tunnel mode 6to4` is not a valid command** — it's
+  always `ipv6ip 6to4`.
+
+**6to4 addressing — the IPv4 address *is* the prefix**
+- 6to4 always lives in **2002::/16**. The next **32 bits are the border router's
+  IPv4 tunnel-source address in hex**, giving the site a **2002:WWXX:YYZZ::/48**; the
+  following 16 bits number subnets inside the site.
+- Worked example — tunnel source Fa0/0 = **192.168.1.1**:
+  192 = **C0**, 168 = **A8**, 1 = **01**, 1 = **01** → `C0A8:0101` →
+  site prefix **2002:C0A8:0101::/48**, tunnel address `2002:C0A8:0101::1/64`.
+  (Cisco's doc example: 192.168.99.1 → `2002:c0a8:6301::/48`.)
+
+```
+interface Tunnel0
+ ipv6 address 2002:C0A8:0101::1/64   ! IPv6 — never "ip address" on a 6to4 tunnel
+ tunnel source FastEthernet0/0       ! or: tunnel source 192.168.1.1 — must be IPv4
+ tunnel mode ipv6ip 6to4             ! no "tunnel destination" — it's automatic
+!
+ipv6 route 2002::/16 Tunnel0         ! REQUIRED — "ipv6 route", not "ip route"
+```
+
+- **The static route is mandatory**: all of 2002::/16 must point at the 6to4 tunnel,
+  or nothing gets encapsulated. Mirror the config on the far-side router.
+- **One 6to4 tunnel per router** (and one IPv4-compatible tunnel), and the two
+  can't share a tunnel source interface.
+- `ipv6 unnumbered <interface>` can borrow another interface's IPv6 address — but
+  for 6to4 that address must still be the 2002:: one matching the tunnel source.
+- **ISATAP** is for hosts *inside* a site: interface ID = **`0000:5EFE`** + the 32-bit
+  IPv4 address (`…:0000:5EFE:0AAD:8108` = 10.173.129.8). Its `tunnel source` must
+  point to an interface that has an IPv4 address.
+
+*Sources: [Cisco — Implementing Tunneling for IPv6 (IOS 15.1SG)](https://www.cisco.com/en/US/docs/ios-xml/ios/ipv6/configuration/15-1sg/ip6-tunnel.html); practice exam question (Infrastructure domain), 2026-10-05.*
 
 ### IPsec fundamentals
 - IPsec is a framework, not one protocol. It provides four security services:
@@ -550,6 +599,8 @@ peer address). Stuck in `MM_KEY_EXCH` = DH finished but authentication is failin
 | Apply an IPsec profile to a tunnel interface | `tunnel protection ipsec profile <profile-name>` |
 | Turn a GRE tunnel into a VTI tunnel | `tunnel mode ipsec {ipv4 \| ipv6}` |
 | Turn a VTI tunnel into a GRE tunnel | `tunnel mode gre {ip \| ipv6}` |
+| IPv6-over-IPv4 tunnel: manual / 6to4 / ISATAP / IPv4-compatible | `tunnel mode ipv6ip [6to4 \| isatap \| auto-tunnel]` |
+| Steer all 6to4 traffic into the 6to4 tunnel (required) | `ipv6 route 2002::/16 tunnel <tunnel-number>` |
 | Set MSS for TCP sessions the router itself originates/terminates (global, 68–10000) | `ip tcp mss <bytes>` |
 | Rewrite MSS in transit TCP SYNs on an interface (500–1460) | `ip tcp adjust-mss <bytes>` |
 | Display information about ISAKMP SAs | `show crypto isakmp sa` |
@@ -783,6 +834,11 @@ this intentional here?" — never automatically a finding.*
   "hosts behind / traffic through the router" = interface `ip tcp adjust-mss`.
   And to *mitigate* fragmentation toward a remote network, 1460 is the wrong
   answer — it produces full 1500-byte packets; 536 is the safe value.
+- **Building a 6to4 tunnel from the wrong address family or a made-up keyword.**
+  The tunnel gets an **IPv6** `2002:<IPv4-in-hex>::` address (not `ip address`), the
+  `tunnel source` is **IPv4** (not IPv6), the mode is `tunnel mode ipv6ip 6to4`
+  (`tunnel mode 6to4` doesn't exist), and the route is **`ipv6 route 2002::/16
+  tunnel 0`** — leave it out, or use `ip route`, and nothing is encapsulated.
 - **Ignoring MTU until it manifests as an application problem.** Ping works,
   SSH works, but file transfers and TLS handshakes hang — that is fragmentation,
   not a "flaky tunnel."
