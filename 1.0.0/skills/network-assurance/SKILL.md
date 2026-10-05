@@ -5,7 +5,8 @@ description: >
   the tools that tell you what the network is actually doing. Invoke when the user asks
   about: network assurance, ping, extended ping, ping sweep, traceroute, debug,
   conditional debug, debug condition, undebug all, logging buffer, logging console,
-  logging monitor, terminal monitor, SNMP, SNMPv1, SNMPv2c, SNMPv3, MIB, OID, SMI,
+  logging monitor, terminal monitor, logging synchronous, unsolicited messages,
+  solicited output, line vty, line con 0, SNMP, SNMPv1, SNMPv2c, SNMPv3, MIB, OID, SMI,
   enterprises subtree, sysDescr, sysObjectID, sysUpTime, sysContact, sysName,
   sysLocation, community string, read-only community, read-write community, snmp-server
   community, snmp-server host, snmp-server enable traps, SNMP trap, SNMP inform, get,
@@ -113,6 +114,19 @@ answers a different question, and picking the wrong one is why troubleshooting s
   (numerically lower = more severe).
 - Having syslog configured does not find the issue for you. It guides you toward it;
   reading it still takes skill.
+- **`logging synchronous`** stops log/debug messages (*unsolicited* output) from chopping up
+  what you're typing (*solicited* output): the message prints on its own line, then the
+  prompt and your partial command are redrawn below it.
+  - It is a **line configuration** command — it applies only to the line it's configured
+    under: `line con 0` = console, **`line vty` = remote sessions, Telnet *and* SSH** (both
+    log in through vty lines), `line aux 0` = aux port. Each line needs its own config.
+  - Syntax: `logging synchronous [level <0-7> | all] [limit <lines>]`. No `level` → Cisco
+    assumes **2** (exam reading: severity 2 and more severe); **`all`** = every severity.
+    `limit` = messages queued before new ones are dropped, default **20**.
+  - Exam pattern: configured under vty → "unsolicited messages appear *after* solicited
+    output **in a Telnet session**"; the **console is unaffected** unless `line con 0`
+    has it too. Tab is command completion, not a logging control.
+  - *Sources: [Cisco IOS Configuration Fundamentals Command Reference — logging synchronous](https://www.cisco.com/c/en/us/td/docs/ios/fundamentals/command/reference/cf_book/cf_l1.html#wp1020534); practice exam question (Network Assurance domain), 2026-10-05.*
 
 **NetFlow**
 - Two components that must both be configured: **NetFlow Data Capture** (captures the
@@ -497,6 +511,12 @@ no logging console                    ! keep the console usable while debugging
 logging host 192.168.14.100
 logging trap 7                        ! severity sent to the collector (UDP 514 default)
 ! do show logging
+!
+! Keep messages from interrupting typing - per line, configure each one
+line con 0
+ logging synchronous                  ! console
+line vty 0 15
+ logging synchronous                  ! Telnet + SSH; "vty 0 4" would miss sessions 5-15
 
 ! ============================================================================
 ! Debugging into the buffer, then clean up
@@ -734,6 +754,9 @@ intentional here?" — never automatically a finding.*
   there and why the console becomes unusable during a debug.
 - **Over SSH/Telnet you see nothing without `terminal monitor`** — the debug is running,
   you just aren't being shown it. People conclude the debug "doesn't work."
+- **Treating `logging synchronous` as Telnet-only or device-wide.** It's per line: under
+  `line vty` it covers Telnet *and* SSH but not the console; under `line con 0` only the
+  console. And `line vty 0 4` leaves vty 5–15 without it.
 - **A severity level includes every level below it.** Setting `logging trap 7` sends
   everything; setting `logging trap 3` silently discards warnings, notifications, and
   informational messages. Numerically lower = more severe.
