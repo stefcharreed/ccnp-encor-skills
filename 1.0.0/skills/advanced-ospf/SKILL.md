@@ -5,7 +5,10 @@ description: >
   IOS-XE. Invoke when the user asks about: OSPF areas, area border router,
   ABR, backbone area, Area 0, LSA types, type 3 summary LSA, discontiguous
   network, OSPF path selection, intra-area vs inter-area, OSPF
-  summarization, OSPF route filtering, area range, area filter-list.
+  summarization, OSPF route filtering, area range, area filter-list, stub
+  area, totally stubby area, NSSA, not-so-stubby area, totally stubby NSSA,
+  area nssa, nssa no-summary, stub no-summary, type 7 LSA, type 7 to type 5
+  translation, ASBR in a stub area, O N1, O N2, default-information-originate.
 ---
 
 ## Purpose
@@ -28,7 +31,15 @@ Multi-area OSPF segments a routing domain into smaller areas so the LSDB, SPF ca
 - **LSA Type 1 (router LSA)**: every OSPF router originates one. Contains an entry for each OSPF-enabled link/interface and its attached networks, with link type, neighbor-correlating info (neighbor RID, or DR interface address on multi-access segments with a DR), and interface metric. Type 1 LSAs are never flooded outside the originating area — the underlying topology of an area is invisible from outside it. Viewed with `show ip ospf database router`.
 - **LSA Type 2 (network LSA)**: represents a multi-access network segment that has elected a DR. Only the DR advertises the type 2 LSA, listing every router attached to that segment. If no DR has been elected on a segment, no type 2 LSA exists (the corresponding type 1 transit-link entry is treated as a stub instead). Like type 1, type 2 LSAs stay inside the originating area. Viewed with `show ip ospf database network`.
 - **LSA Type 3 (summary LSA)**: represents a network from a different area. ABRs build these — type 1/type 2 LSAs are never forwarded directly into another area. When an ABR receives a type 1 LSA, it creates a type 3 LSA referencing that network (using the type 2 LSA to determine the multi-access network's mask) and advertises the type 3 LSA into other areas. If an ABR receives a type 3 LSA from Area 0, it regenerates a new type 3 LSA for the non-backbone area, listing itself as the advertising router and adding its own cost. Viewed with `show ip ospf database summary` (can append a network prefix to restrict output).
-- **LSA Type 4 (ASBR summary LSA)**: advertises a summary LSA for a specific ASBR. **LSA Type 5 (AS external LSA)**: advertises redistributed routes. **LSA Type 7 (NSSA external LSA)**: advertises redistributed routes inside an NSSA. Types 4/5/7 relate to external-route redistribution, which is beyond ENCOR exam scope.
+- **LSA Type 4 (ASBR summary LSA)**: advertises a summary LSA for a specific ASBR. **LSA Type 5 (AS external LSA)**: advertises redistributed routes. **LSA Type 7 (NSSA external LSA)**: advertises redistributed routes inside an NSSA. Types 4/5/7 relate to external-route redistribution, which the OCG treats as beyond ENCOR exam scope — **but practice exams still test stub/NSSA configuration** (see Stub and NSSA areas below).
+- **Stub and NSSA areas** cut which LSAs an ABR floods into an area, shrinking its LSDB (full table under Reference Tables):
+  - **Stub** (`area X stub`): no Type 4/5 — the ABR injects a Type 3 default instead. **Totally stubby** (`area X stub no-summary`): also no Type 3 except that default.
+  - **NSSA** (`area X nssa`): a stub area that still needs an **ASBR** inside it. The ASBR's redistributed routes travel the area as **Type 7** (they exist only inside an NSSA); the **ABR translates Type 7 → Type 5** for the rest of the domain. With several ABRs, the one with the **highest router ID** translates (only Type 7s with the **P-bit = 1**).
+  - **Totally stubby NSSA** (`area X nssa no-summary`): NSSA that also blocks Type 3 — except the default route the ABR injects.
+  - **Default route trap:** plain NSSA gets **no automatic default** — add `area X nssa default-information-originate` on the ABR (originates a Type 7 default). Totally NSSA gets a Type 3 default **automatically**.
+  - **Every router in the area** needs `area X nssa` (or `stub`) — the stub flag is carried in hellos, and a mismatch means **no adjacency**. **`no-summary` goes on the ABR only**, since only an ABR generates Type 3 LSAs; internal routers just use `area X nssa`.
+  - `area X nssa no-redistribution` stops an ABR that is *also* an ASBR from redistributing into the NSSA (external routes go to Area 0 only).
+  - NSSA externals show as **`O N1` / `O N2`** in the routing table (N2 by default, like E2), and as **`O E1/E2`** in other areas after translation.
 - **Type 3 LSA metric logic**: if the type 3 LSA is built from a type 1 LSA, its metric is the total path cost to reach the originating router. If it's built from a type 3 LSA received from Area 0, its metric is the cost to reach that ABR plus the metric already in the original type 3 LSA. An ABR advertises only one type 3 LSA per prefix even if it knows of multiple paths (intra-area and/or inter-area) — the best path's metric is the one used.
 - **Discontiguous network**: occurs when inter-area traffic must cross a non-backbone area to reach its destination (e.g., Area 12 → Area 23 → Area 34, where Area 23 isn't the backbone). The simplest fix is ensuring Area 0 stays contiguous; virtual links or GRE tunnels are other (more complex) fixes, both beyond ENCOR scope. In real networks, discontiguous backbones usually arise from hardware failures partitioning Area 0 — designing for path redundancy into the backbone matters.
 - **OSPF path selection priority**: 1) intra-area, 2) inter-area, 3) external routes (extra logic, out of scope). Intra-area routes are *always* preferred over inter-area routes for the same destination, even if an inter-area path has a numerically lower total metric — this is a common exam trap. Ties in metric within the same route-type tier install multiple paths (ECMP).
@@ -58,6 +69,18 @@ OSPF LSA types used for IPv4 routing:
 | 4 | ASBR summary LSA | Advertises a summary LSA for a specific ASBR |
 | 5 | AS external LSA | Advertises LSAs for routes that have been redistributed |
 | 7 | NSSA external LSA | Advertises redistributed routes in NSSAs |
+
+Stub area types — what the ABR lets in:
+
+| Area type | Command (ABR) | Command (internal routers) | Type 3 | Type 4/5 | Type 7 | Default route |
+|---|---|---|---|---|---|---|
+| Standard | — | — | Yes | Yes | No | Only if originated |
+| Stub | `area X stub` | `area X stub` | Yes | **No** | No | Type 3, automatic |
+| Totally stubby | `area X stub no-summary` | `area X stub` | **Default only** | **No** | No | Type 3, automatic |
+| NSSA | `area X nssa` | `area X nssa` | Yes | **No** | **Yes** | **None** unless `default-information-originate` (Type 7) |
+| Totally NSSA | `area X nssa no-summary` | `area X nssa` | **Default only** | **No** | **Yes** | Type 3, automatic |
+
+*Sources: [Cisco — Configure the OSPF Not-So-Stubby Area (NSSA)](https://www.cisco.com/c/en/us/support/docs/ip/open-shortest-path-first-ospf/6208-nssa.html); practice exam question (Infrastructure domain), 2026-10-05.*
 
 Fundamental rules ABRs use for creating type 3 LSAs:
 
@@ -97,6 +120,18 @@ ip prefix-list PREFIX-FILTER seq 10 permit 0.0.0.0/0 le 32
 !
 router ospf 1
  area 0 filter-list prefix PREFIX-FILTER in
+
+! Totally stubby NSSA — Area 1 has an ASBR (RouterC); RouterA is the ABR
+! RouterA (ABR): no-summary here only — it is the only Type 3 source
+router ospf 1
+ network 192.168.10.0 0.0.0.255 area 0
+ network 10.100.100.0 0.0.0.255 area 1
+ area 1 nssa no-summary
+! RouterC (internal): plain nssa — must still match the area type or no adjacency
+router ospf 1
+ network 10.100.100.0 0.0.0.255 area 1
+ network 192.168.20.32 0.0.0.15 area 1
+ area 1 nssa
 ```
 
 ## Design Baseline
@@ -119,6 +154,8 @@ A deviation from this table is a question ("is this intentional here?"), never a
 | `show ip ospf database summary [prefix]` | Type 3 LSAs — link-state ID, advertising ABR, and metric for inter-area prefixes |
 | `show ip route ospf` | Confirms summarization: a single summary entry plus `is a summary ... Null0` discard route, with component routes suppressed beyond the ABR |
 | `show ip protocols` | Configured `area range` and `area filter-list` statements under the OSPF process |
+| `show ip ospf` | Per-area type — "It is a NSSA area" / "It is a stub area", plus "Perform type-7/type-5 LSA translation" on the translating ABR |
+| `show ip ospf database nssa-external` | Type 7 LSAs inside the NSSA — advertising ASBR and forwarding address |
 
 ## Intent Questions
 - Which areas are supposed to exist, and which routers are supposed to be the ABRs?
@@ -138,6 +175,9 @@ A deviation from this table is a question ("is this intentional here?"), never a
 9. Software/platform bug (rare) — only after adjacency, area assignment, and area-range/filter-list config are all confirmed correct.
 
 ## Common Pitfalls
+- Configuring `area X nssa` (or `stub`) on the ABR only — internal routers must match the area type or the adjacency never forms. The reverse also bites: `no-summary` is needed **only** on the ABR.
+- Expecting a plain NSSA to get a default route — it doesn't; that needs `area X nssa default-information-originate`. Only *totally* NSSA (and stub/totally stubby) get one automatically.
+- Saying a totally stubby (NSSA) area receives "no Type 3 LSAs" — it receives exactly one: the ABR's default route.
 - Assuming any router touching two areas automatically routes between them — it only does if it's a proper ABR with an Area 0 interface; a router in Area 1 and Area 2 but not Area 0 will not exchange routes between Area 1 and Area 2.
 - Picking the lower-metric inter-area path over a higher-metric intra-area path — OSPF never does this; intra-area beats inter-area unconditionally, independent of metric.
 - Expecting type 1 or type 2 LSAs to cross an area boundary — they never do; only type 3 (and 4/5/7 for external routes) cross between areas, which is also why an area's internal topology is invisible from outside it.
