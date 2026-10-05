@@ -8,7 +8,9 @@ description: >
   summarization, OSPF route filtering, area range, area filter-list, stub
   area, totally stubby area, NSSA, not-so-stubby area, totally stubby NSSA,
   area nssa, nssa no-summary, stub no-summary, type 7 LSA, type 7 to type 5
-  translation, ASBR in a stub area, O N1, O N2, default-information-originate.
+  translation, ASBR in a stub area, O N1, O N2, default-information-originate,
+  summary route metric, summary cost, compatible rfc1583, RFC 1583, RFC 2328,
+  area range cost.
 ---
 
 ## Purpose
@@ -46,6 +48,10 @@ Multi-area OSPF segments a routing domain into smaller areas so the LSDB, SPF ca
 - **Equal-Cost Multipathing (ECMP)**: when path selection finds multiple equal-metric best paths, all are installed (default max 4 paths) — overridable with `maximum-paths` under the OSPF process.
 - **Summarization** happens only at ABRs (since every router in an area must hold an identical LSDB, summarization can't happen mid-area) and works only on type 1 LSAs being converted to type 3. It shrinks the LSDB on the far side of the ABR and can eliminate SPF recalculation outside the area entirely for the summarized range, since the more specific prefixes are hidden from routers beyond the ABR.
 - **Inter-area summarization metric**: by default IOS XE sets the type 3 summary LSA's metric to the lowest metric among the component routes (RFC 1583 guidance) — same dynamic-recheck behavior as EIGRP: removing or adding a component route can shift the summary to a new lowest metric and trigger a re-advertisement. The metric can instead be statically pinned with the `cost` keyword.
+  - **Why "lowest" is the default — two RFCs disagree.** RFC 1583 uses the **lowest** component cost; RFC 2328 (current OSPFv2) uses the **highest**. IOS ships with **`compatible rfc1583` on** (Command Default: "Compatible with RFC 1583"), so the summary gets the lowest cost. `no compatible rfc1583` (router config) switches to the RFC 2328 highest-cost method.
+  - Worked example — components cost 10, 30, 50 behind `area 1 range 172.16.0.0 255.255.0.0`: default → summary cost **10**; `no compatible rfc1583` → **50**; `area 1 range 172.16.0.0 255.255.0.0 cost 100` → **100** regardless of components.
+  - **Set it identically on every router in the domain** — Cisco: mixed RFC compatibility risks routing loops.
+  - *Sources: [Cisco IOS IP Routing: OSPF Command Reference — compatible rfc1583](https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/iproute_ospf/command/iro-cr-book/ospf-a1.html#wp1286887253); practice exam question (Infrastructure domain), 2026-10-05.*
 - An ABR performing inter-area summarization installs a **discard route** to Null0 matching the summarized range, to prevent routing loops for any portion of the range that doesn't have a more specific route in the RIB. AD for the OSPF summary discard route is 110 for internal networks, 254 for external.
 - **Route filtering** with link-state protocols is harder than with vector protocols, because every router in an area shares an identical LSDB — filtering generally has to happen as routes enter/leave an area at the ABR, not at arbitrary points in the flood path.
 
@@ -175,6 +181,7 @@ A deviation from this table is a question ("is this intentional here?"), never a
 9. Software/platform bug (rare) — only after adjacency, area assignment, and area-range/filter-list config are all confirmed correct.
 
 ## Common Pitfalls
+- Assuming IOS uses RFC 2328's **highest** component cost for a summary — the default is `compatible rfc1583` → **lowest**. And pinning the metric is `area X range ... cost N` in OSPF, not `summary-metric` (that's EIGRP).
 - Configuring `area X nssa` (or `stub`) on the ABR only — internal routers must match the area type or the adjacency never forms. The reverse also bites: `no-summary` is needed **only** on the ABR.
 - Expecting a plain NSSA to get a default route — it doesn't; that needs `area X nssa default-information-originate`. Only *totally* NSSA (and stub/totally stubby) get one automatically.
 - Saying a totally stubby (NSSA) area receives "no Type 3 LSAs" — it receives exactly one: the ABR's default route.

@@ -4,7 +4,8 @@ description: >
   Use this skill when troubleshooting or configuring eigrp on IOS-XE.
   Invoke when the user asks about: EIGRP, DUAL, successor, feasible
   successor, feasibility condition, EIGRP topology table, wide metrics,
-  EIGRP query, EIGRP summarization, variance.
+  EIGRP query, EIGRP summarization, variance, summary route metric,
+  summary-metric, EIGRP named mode, topology base.
 ---
 
 ## Purpose
@@ -24,6 +25,11 @@ EIGRP (an enhanced distance vector protocol using DUAL) precalculates loop-free 
 - **Hello/hold timers**: hello every 5s by default (60s on T1-or-slower interfaces); hold time defaults to 3× the hello interval (15s default, 180s on slow interfaces) — resets on every received hello, and reaching 0 declares the neighbor down and triggers DUAL recomputation for any prefix where that neighbor was the successor.
 - **Convergence on neighbor loss**: if a feasible successor exists, it's promoted to successor instantly (no recomputation needed) and the router advertises the new metric via an update packet — downstream routers then run their own DUAL against the new info, which can itself change their successor/feasible successor. If no feasible successor exists, the prefix goes Active and the router queries all EIGRP neighbors for alternate paths.
 - **EIGRP summarization** is configured per-interface (not under the routing process) — once a summary range is applied, component routes within that range are suppressed and only the summary is advertised; the summary itself isn't advertised until at least one component route exists. Summarization both shrinks routing tables and creates a query boundary, limiting how far an Active-state query has to propagate during convergence.
+- **Summary route metric:** by default EIGRP copies the metric of the **best (lowest) component** into the summary. Whenever the best component changes, the summary is re-advertised to every peer — and even when a *different* component changes, EIGRP re-searches every topology entry to check. On a churny network that's significant CPU overhead. **`summary-metric`** pins the metric so EIGRP stops searching components:
+  - Syntax: `summary-metric <network> <mask> [<bandwidth> <delay> <reliability> <load> <mtu>] [distance <AD>]` — since IOS XE 3.2S at least one of the optional sets is required.
+  - **Named mode only** — it lives in **address-family topology** configuration (`config-router-af-topology`, under `topology base`), not classic `router eigrp <asn>`.
+  - OSPF's equivalent is `area X range ... cost N` (OSPF also defaults to the lowest component cost).
+  - *Sources: [Cisco IOS IP Routing: EIGRP Command Reference — summary-metric](https://www.cisco.com/c/en/us/td/docs/ios/iproute_eigrp/command/reference/ire_book/ire_s1.html#wp1059226); practice exam question (Infrastructure domain), 2026-10-05.*
 
 ## Procedure
 Query/reply convergence when no feasible successor exists (example: R2 loses successor for 10.1.1.0/24, queries R3 and R4):
@@ -92,6 +98,16 @@ router eigrp 100
 ! Per-interface route summarization
 interface GigabitEthernet0/2
  ip summary-address eigrp 100 172.16.0.0 255.255.0.0
+
+! Named mode: summary plus a pinned summary metric (not lab-verified)
+router eigrp CORE
+ address-family ipv4 unicast autonomous-system 100
+  af-interface GigabitEthernet0/2
+   summary-address 172.16.0.0 255.255.0.0
+  exit-af-interface
+  topology base
+   summary-metric 172.16.0.0 255.255.0.0 10000 100 255 1 1500   ! bw delay rel load mtu
+  exit-af-topology
 ```
 
 ## Design Baseline
@@ -133,6 +149,7 @@ A deviation from this table is a question ("is this intentional here?"), never a
 ## Common Pitfalls
 - Assuming a backup path with a *better* (lower) metric than the successor always becomes a feasible successor — feasibility is judged purely by the feasibility condition (RD < local FD), not by metric ranking; a numerically worse path can pass while a numerically better one fails.
 - Forgetting EIGRP summarization is per-interface, not under the `router eigrp` process — looking for it in the wrong configuration context wastes troubleshooting time.
+- Looking for `summary-metric` under classic `router eigrp 100` — it exists only in named mode's `topology base`. Without it, the summary tracks the best component metric and re-advertises every time that changes.
 - Mixing classic and wide metrics without checking K1–K5 alignment — adjacency silently fails to form rather than erroring obviously; always verify `show ip protocols` K-values on both sides.
 - Treating Active (A) state in `show ip eigrp topology` as inherently a problem — it's the expected, normal state *during* convergence; it's only a problem if a prefix stays Active far longer than expected (SIA).
 - Confusing ECMP (automatic, same metric, default-enabled) with EIGRP's unequal-cost load balancing (manual, different metrics, requires `variance` > 1) — checking `show ip route` without realizing variance is still at its default of 1 will make unequal-cost paths look like they're "not working" when they were simply never enabled.
